@@ -6,9 +6,9 @@ export default function Header({ currentStep, totalSteps }) {
       <div className="topbar-left">
         <div className="topbar-logo-circle">⚽</div>
         <div className="topbar-title">
-          <div className="topbar-app-name">MyGIS – Fotballbaner</div>
+          <div className="topbar-app-name">FootyGIS</div>
           <div className="topbar-subtitle">
-            Analyse av tilgjengelighet for en vennegjeng i Trondheim
+
           </div>
         </div>
       </div>
