@@ -98,12 +98,14 @@ export default function TourOverlay({ step, onNext, onSkip }) {
         ))}
 
         <div className="tour-footer">
-          <button
-            className="btn btn-secondary"
-            onClick={closeWithAnimation}
-          >
-            Hopp over
-          </button>
+          {step !== 6 && (
+            <button
+              className="btn btn-secondary"
+              onClick={closeWithAnimation}
+            >
+              Hopp over
+            </button>
+          )}
           <button
             className="btn btn-primary"
             onClick={handlePrimaryClick}

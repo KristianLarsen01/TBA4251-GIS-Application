@@ -32,6 +32,8 @@
   background: #020617;
   color: #e5e7eb;
   border-bottom: 1px solid #1e293b;
+  position: relative;
+  z-index: 50;
 }
 
 .topbar-left {
@@ -130,11 +132,10 @@
   transform: translateY(-1px);
 }
 
-/* Buffer klar til bruk – grønn */
-.tool-rail-button-buffer-ready {
-  background: #16a34a;
-  color: #ecfdf3;
-  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.4);
+.tool-rail-button-active {
+  background: #f59e0b;
+  color: #0f172a;
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.35);
 }
 
 /* Disabled verktøyknapp: fortsatt mørkeblå, bare ikke-klikkbar */
@@ -188,6 +189,7 @@
   position: relative;
   background: #0b1120;
   min-height: 0;
+  contain: content;
 }
 
 .map-container {
@@ -201,36 +203,76 @@
   height: 100%;
 }
 
+.leaflet-map-root.drawing-cursor,
+.leaflet-map-root.drawing-cursor * {
+  cursor: crosshair !important;
+}
+
 /* =========================================================
-   Liten info-melding nederst på kartet
+   Tegneverktøy (HUD over kartet)
    ========================================================= */
 
-.tool-message {
+.draw-hud {
   position: absolute;
-  left: 1.25rem;
-  bottom: 1.25rem;
+  top: 1rem;
+  right: 1.25rem;
   max-width: 360px;
   background: #f9fafb;
   color: #111827;
-  border-radius: 0.75rem;
-  padding: 0.6rem 0.75rem;
+  border-radius: 0.9rem;
+  padding: 0.8rem 0.9rem;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.55);
+  font-size: 0.82rem;
+  z-index: 42;
   display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.draw-hud-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
-  align-items: flex-start;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.6);
+}
+
+.draw-hud-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.draw-hud-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.draw-hud button {
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  padding: 0.3rem 0.75rem;
   font-size: 0.8rem;
-  z-index: 35;
-}
-
-.tool-message-text {
-  flex: 1;
-}
-
-.tool-message-close {
-  border: none;
-  background: transparent;
-  font-size: 1.1rem;
   cursor: pointer;
+}
+
+.draw-hud button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.draw-hud-body {
+  color: #4b5563;
+  line-height: 1.4;
+}
+
+.draw-hud-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.8rem;
+  color: #1f2937;
 }
 
 /* =========================================================
@@ -325,12 +367,6 @@
   color: #4b5563;
 }
 
-.buffer-panel-empty {
-  margin-top: 0.25rem;
-  font-style: italic;
-  color: #6b7280;
-}
-
 .buffer-form {
   display: flex;
   flex-direction: column;
@@ -397,6 +433,81 @@
   margin-top: 0.6rem;
   font-size: 0.8rem;
   color: #16a34a;
+}
+
+/* =========================================================
+   Tool panels (Intersect, Union, Difference, Clip, AreaFilter, FeatureExtractor)
+   ========================================================= */
+
+.tool-panel {
+  position: absolute;
+  top: 1rem;
+  left: 1.25rem;
+  max-width: 360px;
+  background: #f9fafb;
+  border-radius: 0.9rem;
+  padding: 0.9rem 1rem 1rem;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.65);
+  font-size: 0.82rem;
+  z-index: 40;
+}
+
+.tool-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.45rem;
+}
+
+.tool-panel-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.tool-panel-close-btn {
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.tool-panel-error {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.tool-panel-error-title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #1f2937;
+}
+
+.tool-panel-error-message {
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.4;
+}
+
+.tool-panel-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.tool-panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.tool-panel-description {
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.4;
 }
 
 /* =========================================================
@@ -828,8 +939,7 @@
 .tour-active .map-column,
 .tour-active .top-right-panels,
 .tour-active .top-right-panels *,
-.tour-active .upload-panel,
-.tour-active .tool-message {
+.tour-active .upload-panel {
   pointer-events: none;
 }
 

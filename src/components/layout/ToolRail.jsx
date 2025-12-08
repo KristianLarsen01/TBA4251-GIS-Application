@@ -1,34 +1,48 @@
 import { useLayers } from "../../context/LayersContext.jsx";
+import { useDrawing } from "../../context/DrawingContext.jsx";
 
 export default function ToolRail({
   onUploadClick,
   onToolClick,
   onShowTour,
+  onDrawingToggle,
   tourActive,
   highlight,
 }) {
   const { layers } = useLayers();
   const hasLayers = layers.length > 0;
+  const { activeTool, toggleTool, stopDrawing } = useDrawing();
 
   const handleClick = (id) => {
     if (tourActive) return;
 
+    // Tegneverktøy håndteres her, ikke via onToolClick
+    if (id === "draw-point" || id === "draw-line" || id === "draw-polygon") {
+      const nextTool = id === "draw-point" ? "point" : id === "draw-line" ? "line" : "polygon";
+      const willActivate = activeTool !== nextTool;
+      toggleTool(nextTool);
+      onDrawingToggle?.(willActivate ? nextTool : null);
+      return;
+    }
+
     if (id === "upload") {
       onUploadClick?.();
-    } else {
-      if (id === "buffer" && !hasLayers) return; // buffer krever lag
+      return;
+    }
+
+    // Buffer og andre analyseverktøy – disabled med feilmelding
+    if (id === "buffer" || id === "intersect" || id === "union" || id === "difference" || id === "clip" || id === "areaFilter" || id === "featureExtractor") {
+      stopDrawing();
       onToolClick?.(id);
+      return;
     }
   };
-
-  const bufferTitle = hasLayers
-    ? "Buffer – lag et nytt lag med buffer rundt valgt lag med valgt radius."
-    : "Buffer (deaktivert) – trenger minst ett lag i kartet for å kunne lage buffer.";
 
   return (
     <aside
       className={`tool-rail ${highlight ? "tour-highlight-tools" : ""}`}
     >
+      {/* UPLOAD */}
       <div className="tool-rail-group">
         <button
           className="tool-rail-button tool-rail-button-main"
@@ -40,14 +54,59 @@ export default function ToolRail({
             <span>Last opp</span>
           </span>
         </button>
+      </div>
+
+      {/* KARTTEGNING */}
+      <div className="tool-rail-group">
+        <button
+          className={`tool-rail-button ${
+            activeTool === "point" ? "tool-rail-button-active" : ""
+          }`}
+          onClick={() => handleClick("draw-point")}
+          title="Punkt – klikk i kartet for å legge til et punktlag."
+          aria-pressed={activeTool === "point"}
+        >
+          <span className="tool-rail-icon">●</span>
+          <span className="tool-rail-label">
+            <span>Punkt</span>
+          </span>
+        </button>
 
         <button
           className={`tool-rail-button ${
-            hasLayers ? "tool-rail-button-buffer-ready" : "tool-rail-button-disabled"
+            activeTool === "line" ? "tool-rail-button-active" : ""
           }`}
+          onClick={() => handleClick("draw-line")}
+          title="Linje – klikk flere ganger i kartet, avslutt med dobbeltklikk eller Enter."
+          aria-pressed={activeTool === "line"}
+        >
+          <span className="tool-rail-icon">〰️</span>
+          <span className="tool-rail-label">
+            <span>Linje</span>
+          </span>
+        </button>
+
+        <button
+          className={`tool-rail-button ${
+            activeTool === "polygon" ? "tool-rail-button-active" : ""
+          }`}
+          onClick={() => handleClick("draw-polygon")}
+          title="Polygon – klikk flere ganger i kartet, avslutt med dobbeltklikk eller Enter."
+          aria-pressed={activeTool === "polygon"}
+        >
+          <span className="tool-rail-icon">▲</span>
+          <span className="tool-rail-label">
+            <span>Polygon</span>
+          </span>
+        </button>
+      </div>
+
+      {/* ANALYSEVERKTØY */}
+      <div className="tool-rail-group">
+        <button
+          className="tool-rail-button"
           onClick={() => handleClick("buffer")}
-          disabled={!hasLayers}
-          title={bufferTitle}
+          title="Buffer – lag et nytt lag med buffer rundt valgt lag med valgt radius."
         >
           <span className="tool-rail-icon">⭘</span>
           <span className="tool-rail-label">

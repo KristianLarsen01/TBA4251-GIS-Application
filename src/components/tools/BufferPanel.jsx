@@ -69,20 +69,24 @@ export default function BufferPanel({ onClose }) {
         </button>
       </div>
 
-      <p className="buffer-panel-description">
-        Velg lag og angi en bufferavstand. Bufferen beregnes rundt alle
-        objektene i laget og legges til som et nytt lag.
-      </p>
+      {!hasLayers ? (
+        <div className="tool-panel-error">
+          <p className="tool-panel-error-title">Ingen lag i kartet</p>
+          <p className="tool-panel-error-message">
+            Buffer krever minst ett lag i kartet.
+          </p>
+          <p className="tool-panel-hint">
+            Du har ingen lag. Last opp ett eller flere GeoJSON-lag for å bruke det.
+          </p>
+        </div>
+      ) : (
+        <>
+          <p className="buffer-panel-description">
+            Velg lag og angi en bufferavstand. Bufferen beregnes rundt alle
+            objektene i laget og legges til som et nytt lag.
+          </p>
 
-      {!hasLayers && (
-        <p className="buffer-panel-empty">
-          Du har ingen lag i kartet. Last opp ett eller flere GeoJSON-lag før
-          du bruker buffer-funksjonen.
-        </p>
-      )}
-
-      {hasLayers && (
-        <form className="buffer-form" onSubmit={handleSubmit}>
+          <form className="buffer-form" onSubmit={handleSubmit}>
           <div className="buffer-field">
             <label htmlFor="buffer-layer">Lag som skal buffres</label>
             <select
@@ -120,6 +124,7 @@ export default function BufferPanel({ onClose }) {
             Lag buffer
           </button>
         </form>
+        </>
       )}
 
       {status && <p className="buffer-status">{status}</p>}
