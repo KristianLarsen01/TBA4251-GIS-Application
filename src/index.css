@@ -10,6 +10,9 @@ body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
   background: #f3f4f6;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* App.css */
@@ -43,16 +46,6 @@ body {
   background: #15803d;
 }
 
-.toolbar {
-  display: flex;
-  gap: 0.5rem;
-  flex: 1;
-}
-
-.header-right {
-  margin-left: auto;
-}
-
 .app-body {
   display: flex;
   flex: 1;
@@ -74,12 +67,6 @@ body {
 .sidebar-empty {
   color: #6b7280;
   font-size: 0.9rem;
-}
-
-.map-container {
-  flex: 1;
-  position: relative;
-  background: #dbeafe;
 }
 
 .map-placeholder {

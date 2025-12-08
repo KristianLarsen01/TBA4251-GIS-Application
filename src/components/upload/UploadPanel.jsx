@@ -32,11 +32,38 @@ export default function UploadPanel({ onClose }) {
 
     for (const file of files) {
       try {
+        // Sjekk filtype
+        const isGeoJsonFile = /\.(geo)?json$/i.test(file.name);
+        if (!isGeoJsonFile) {
+          throw new Error("Kun .geojson eller .json-filer er tillatt.");
+        }
+
         const text = await file.text();
         let data = JSON.parse(text);
 
-        if (!data.type) {
-          throw new Error("Filen ser ikke ut som GeoJSON.");
+        // Valider at det er GeoJSON
+        if (!data.type || !["FeatureCollection", "Feature", "Point", "LineString", "Polygon", "MultiPoint", "MultiLineString", "MultiPolygon", "GeometryCollection"].includes(data.type)) {
+          throw new Error("Filen ser ikke ut som gyldig GeoJSON.");
+        }
+
+        // Hvis det er en enkelt Feature, pakk den inn i FeatureCollection
+        if (data.type === "Feature") {
+          data = {
+            type: "FeatureCollection",
+            features: [data]
+          };
+        }
+
+        // Hvis det er en ren geometri, pakk den inn
+        if (["Point", "LineString", "Polygon", "MultiPoint", "MultiLineString", "MultiPolygon", "GeometryCollection"].includes(data.type)) {
+          data = {
+            type: "FeatureCollection",
+            features: [{
+              type: "Feature",
+              geometry: data,
+              properties: {}
+            }]
+          };
         }
 
         data = reprojectToWgs84IfNeeded(data);
@@ -83,7 +110,7 @@ export default function UploadPanel({ onClose }) {
         <span>Dra og slipp filer her, eller klikk for å velge.</span>
         <input
           type="file"
-          accept=".geojson,application/geo+json,application/json"
+          accept=".geojson"
           multiple
           onChange={handleFiles}
           style={{ display: "none" }}

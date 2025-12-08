@@ -62,7 +62,7 @@ export default function IntroModal({ step, onNext, onSkip }) {
 
         <div className="tour-footer">
           {/* Hopp over skal først vises etter introen */}
-          {step > 1 && (
+          {(step > 1 && step < 6) && (
             <button className="btn btn-secondary" onClick={onSkip}>
               Hopp over
             </button>
