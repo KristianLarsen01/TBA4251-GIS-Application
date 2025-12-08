@@ -1,18 +1,41 @@
+// src/context/LayersContext.jsx
 import { createContext, useContext, useState } from "react";
 
 const LayersContext = createContext(null);
+
+// Enkel palett som går på rundgang
+const COLOR_PALETTE = [
+  "#1f77b4",
+  "#ff7f0e",
+  "#2ca02c",
+  "#d62728",
+  "#9467bd",
+  "#8c564b",
+  "#e377c2",
+  "#7f7f7f",
+  "#17becf",
+];
 
 export function LayersProvider({ children }) {
   const [layers, setLayers] = useState([]);
 
   const addLayer = (layer) => {
-    setLayers((prev) => [
-      ...prev,
-      {
-        visible: true,
-        ...layer,
-      },
-    ]);
+    setLayers((prev) => {
+      const idx = prev.length % COLOR_PALETTE.length;
+      const color = layer.color ?? COLOR_PALETTE[idx];
+      const fillOpacity =
+        typeof layer.fillOpacity === "number" ? layer.fillOpacity : 0.7;
+
+      return [
+        ...prev,
+        {
+          visible: true,
+          color,
+          fillOpacity,
+          ...layer,
+        },
+      ];
+    });
   };
 
   const updateLayer = (id, patch) => {

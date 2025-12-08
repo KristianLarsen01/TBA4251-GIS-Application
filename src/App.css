@@ -1,13 +1,16 @@
-/* ========== Layout ========== */
+/* =========================================================
+   Layout / Shell
+   ========================================================= */
 
 .app-shell {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   background: #0f172a;
-  padding-right: 0.3rem; /* hardkodet så outline synes ordentlig */
-  padding-bottom: 0.3rem; /* hardkodet så outline synes ordentlig */
-  padding-left: 0.25rem; /* hardkodet så outline synes ordentlig */
+  /* litt padding for at tour-outline rundt appen skal synes */
+  padding-right: 0.3rem;
+  padding-bottom: 0.3rem;
+  padding-left: 0.25rem;
 }
 
 .app-main {
@@ -17,7 +20,9 @@
   position: relative; /* for top-right-panels */
 }
 
-/* ========== Top bar ========== */
+/* =========================================================
+   Topbar
+   ========================================================= */
 
 .topbar {
   display: flex;
@@ -78,10 +83,12 @@
   font-weight: 600;
 }
 
-/* ========== Tool rail (venstre) ========== */
+/* =========================================================
+   Tool rail (venstre)
+   ========================================================= */
 
 .tool-rail {
-  width: 90px;
+  width: 100px;
   background: #020617;
   border-right: 1px solid #1e293b;
   display: flex;
@@ -123,6 +130,25 @@
   transform: translateY(-1px);
 }
 
+/* Buffer klar til bruk – grønn */
+.tool-rail-button-buffer-ready {
+  background: #16a34a;
+  color: #ecfdf3;
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.4);
+}
+
+/* Disabled verktøyknapp: fortsatt mørkeblå, bare ikke-klikkbar */
+.tool-rail-button-disabled {
+  background: #020617;
+  color: #4b5563;
+  cursor: default;
+}
+
+.tool-rail-button:disabled:hover {
+  background: #020617;
+  transform: none;
+}
+
 .tool-rail-icon {
   font-size: 1.1rem;
 }
@@ -153,25 +179,9 @@
   cursor: default;
 }
 
-/* Lukk-animasjon for siste tour-steg: kortet flyr ned til venstre */
-.tour-card-closing {
-  animation: tour-card-slide-to-rail 0.8s ease-in-out forwards;
-}
-
-@keyframes tour-card-slide-to-rail {
-  0% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-  }
-  100% {
-    /* Juster disse verdiene hvis du vil treffe knappen mer nøyaktig på din skjerm */
-    transform: translate(-260%, 120%) scale(0.1);
-    opacity: 0.1;
-  }
-}
-
-
-/* ========== Kart-kolonne (midten) ========== */
+/* =========================================================
+   Kart / Leaflet
+   ========================================================= */
 
 .map-column {
   flex: 1;
@@ -179,8 +189,6 @@
   background: #0b1120;
   min-height: 0;
 }
-
-/* Selve kartet */
 
 .map-container {
   position: absolute;
@@ -193,7 +201,9 @@
   height: 100%;
 }
 
-/* ========== Liten info-melding nederst på kartet ========== */
+/* =========================================================
+   Liten info-melding nederst på kartet
+   ========================================================= */
 
 .tool-message {
   position: absolute;
@@ -223,7 +233,9 @@
   cursor: pointer;
 }
 
-/* ========== Upload-panel ========== */
+/* =========================================================
+   Upload-panel
+   ========================================================= */
 
 .upload-panel {
   position: absolute;
@@ -271,44 +283,160 @@
   color: #16a34a;
 }
 
-/* ========== Panel-skall oppe til høyre (Lag + Oppgave) ========== */
+/* =========================================================
+   Buffer-panel
+   ========================================================= */
 
-/* Litt avstand mellom Lag og Oppgave */
+.buffer-panel {
+  position: absolute;
+  top: 1rem;
+  left: 1.25rem;
+  max-width: 360px;
+  background: #f9fafb;
+  border-radius: 0.9rem;
+  padding: 0.9rem 1rem 1rem;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.65);
+  font-size: 0.82rem;
+  z-index: 40;
+}
+
+.buffer-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.45rem;
+}
+
+.buffer-panel-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.buffer-close-btn {
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.buffer-panel-description {
+  margin: 0 0 0.6rem;
+  color: #4b5563;
+}
+
+.buffer-panel-empty {
+  margin-top: 0.25rem;
+  font-style: italic;
+  color: #6b7280;
+}
+
+.buffer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.buffer-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.buffer-field label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+}
+
+.buffer-field select,
+.buffer-field input[type="number"] {
+  border-radius: 0.6rem;
+  border: 1px solid #d1d5db;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.82rem;
+}
+
+.buffer-field-inline {
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 0.6rem;
+}
+
+.buffer-field-distance {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.buffer-field-unit {
+  padding-bottom: 0.35rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.buffer-submit {
+  margin-top: 0.25rem;
+  border-radius: 999px;
+  border: none;
+  padding: 0.4rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: #16a34a;
+  color: #f9fafb;
+}
+
+.buffer-submit:hover {
+  filter: brightness(1.05);
+}
+
+.buffer-status {
+  margin-top: 0.6rem;
+  font-size: 0.8rem;
+  color: #16a34a;
+}
+
+/* =========================================================
+   Panel-skall oppe til høyre (Lag + Oppgave)
+   ========================================================= */
+
 .top-right-panels {
   position: absolute;
   top: 1rem;
   right: 1.25rem;
   display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
   z-index: 5;
+  pointer-events: none; /* container tar IKKE imot klikk */
 }
 
-/* Animer Lag-knappen når oppgavepanelet åpnes/lukkes */
+/* Lag-knappen (første panel-shell) får en liten nudge når oppgavepanelet er åpent */
 .top-right-panels .panel-shell:first-child {
   transition: transform 0.25s ease;
 }
 
-/* Når oppgavepanelet er ÅPENT skyves Lag-knappen litt til venstre */
+/* Når oppgavepanelet er åpent – flytt Lag-knappen litt til venstre */
 .top-right-panels.tasks-open .panel-shell:first-child {
-  transform: translateX(-0.5rem); /* juster til det ser perfekt ut hos deg */
+  transform: translateX(-17rem);
 }
 
-/* Når oppgavepanelet er LUKKET står Lag-knappen rett ved Oppgave */
-.top-right-panels.tasks-closed .panel-shell:first-child {
-  transform: translateX(+15.5rem);
-}
-
-
+/* Når touren skal fremheve lag-/oppgavepanelene */
 .top-right-panels.tour-highlight-root {
-  z-index: 60; /* over tour-backdrop (50) */
+  z-index: 60;   /* over tour-backdrop (50) */
 }
 
 .panel-shell {
+  position: relative;              /* referanse for absolutt plassering */
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  pointer-events: auto;            /* panel + knapp skal være klikkbare */
 }
 
-/* Knappene Lag / Oppgave */
 
 .panel-toggle-btn {
   border-radius: 999px;
@@ -330,27 +458,29 @@
   box-shadow: 0 0 0 2px #e5e7eb, 0 12px 25px rgba(15, 23, 42, 0.75);
 }
 
+/* Innholdet ligger nå som overlay under knappen,
+   ikke i samme layout-boks som knappene */
 .panel-shell-content {
-  margin-top: 0.4rem;
-  max-height: 0;
+  position: absolute;
+  top: calc(100% + 0.4rem);        /* litt luft under knappen */
+  right: 0;
   opacity: 0;
   transform: translateY(-6px);
   pointer-events: none;
-  transition: max-height 0.25s ease, opacity 0.25s ease, transform 0.25s ease;
-  overflow: hidden;
+  transition: opacity 0.25s ease, transform 0.25s ease;
   background: transparent;
 }
 
 /* Når panel er åpent */
 .panel-shell-content.open {
-  max-height: 80vh;
   opacity: 1;
   transform: translateY(0);
-  pointer-events: auto;
-  overflow: visible; /* viktig: ikke klipp hjørner/skyggene */
+  pointer-events: auto;            /* nå kan du klikke inni panelene */
 }
 
-/* ========== Task-panel (oppgave) ========== */
+/* =========================================================
+   Task-panel (oppgave)
+   ========================================================= */
 
 .task-panel {
   background: #f9fafb;
@@ -427,10 +557,12 @@
   color: #6b7280;
 }
 
-/* ========== Lagpanel ========== */
+/* =========================================================
+   Lagpanel
+   ========================================================= */
 
 .layers-panel {
-  width: 260px;
+  width: 420px;
   max-height: 60vh;
   background: #f9fafb;
   border-radius: 0.9rem;
@@ -474,30 +606,102 @@
   line-height: 1;
 }
 
+.layers-column-header {
+  display: grid;
+  grid-template-columns: 40px 52px 1fr 80px 90px;
+  column-gap: 0.3rem;
+  padding: 0.25rem 0.3rem 0.15rem;
+  margin-bottom: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.layers-col-label,
+.layers-color-input,
+.layers-row input[type="checkbox"] {
+  justify-self: center;
+}
+
+.layers-col-name {
+  text-align: left;
+}
+
+.layers-col-color,
+.layers-col-visible,
+.layers-col-opacity,
+.layers-col-actions {
+  text-align: center;
+}
+
 .layers-list {
   list-style: none;
   margin: 0;
   padding: 0;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .layers-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 40px 52px 1fr 80px 90px;
+  column-gap: 0.3rem;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.25rem 0;
+  padding: 0.25rem 0.15rem;
+}
+
+.layers-color-input {
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  padding: 0;
+  border: none;
+  margin: 0 auto;
+  display: block;
+}
+
+.layers-color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.layers-color-input::-webkit-color-swatch {
+  border-radius: 9999px;
+  border: none;
 }
 
 .layers-name-input {
-  flex: 1;
-  border-radius: 0.5rem;
+  width: 100%;
+  max-width: none;
+  border-radius: 0.4rem;
   border: 1px solid #d1d5db;
-  padding: 0.15rem 0.4rem;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.4rem;
+}
+
+.layers-opacity-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  justify-content: center;
+}
+
+.layers-opacity-input {
+  width: 45px;
+  padding: 0.15rem 0.25rem;
+  font-size: 0.75rem;
+  border-radius: 0.4rem;
+  border: 1px solid #d1d5db;
+  text-align: right;
+}
+
+.layers-opacity-percent {
+  font-size: 0.75rem;
+  color: #6b7280;
 }
 
 .layers-row-buttons {
   display: flex;
+  justify-content: center;
   gap: 0.15rem;
 }
 
@@ -505,9 +709,9 @@
   border: none;
   background: #e5e7eb;
   border-radius: 0.4rem;
-  padding: 0.1rem 0.25rem;
+  padding: 0.15rem 0.3rem;
+  font-size: 0.7rem;
   cursor: pointer;
-  font-size: 0.75rem;
 }
 
 .layers-row-buttons button:disabled {
@@ -515,7 +719,9 @@
   cursor: default;
 }
 
-/* ========== Generelle knapper (PrimaryButton + tour) ========== */
+/* =========================================================
+   Generelle knapper (PrimaryButton + tour)
+   ========================================================= */
 
 .btn {
   border-radius: 999px;
@@ -550,7 +756,9 @@
   cursor: default;
 }
 
-/* ========== Onboarding / tour ========== */
+/* =========================================================
+   Onboarding / Tour
+   ========================================================= */
 
 /* Dimming-laget – dekker hele skjermen */
 .tour-backdrop {
@@ -568,7 +776,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 70; /* over både backdrop og highlight */
+  z-index: 70;
   max-width: 420px;
   background: #f9fafb;
   border-radius: 0.9rem;
@@ -591,14 +799,12 @@
 
 /* Highlightede elementer – over backdrop, men under dialog */
 
-/* Kartet i fokus (steg 2) */
 .map-column.tour-highlight-map {
   z-index: 60;
   outline: 6px solid #facc15;
   box-shadow: none;
 }
 
-/* Verktøylinja i fokus (steg 3) */
 .tool-rail.tour-highlight-tools {
   z-index: 60;
   outline: 4px solid #facc15;
@@ -606,24 +812,45 @@
   box-shadow: none;
 }
 
-/* Lag- og oppgavepanel i fokus (steg 4 og 5) */
 .layers-panel.tour-highlight-layers,
 .task-panel.tour-highlight-tasks {
+  position: relative;     /* nødvendig for at z-index skal virke */
   z-index: 60;
   outline: 4px solid #facc15;
   outline-offset: 0;
   box-shadow: none;
 }
 
+
 /* Når omvisning er aktiv: deaktiver klikking på alt "under" overleggene */
 .tour-active .topbar,
 .tour-active .tool-rail,
 .tour-active .map-column,
 .tour-active .top-right-panels,
+.tour-active .top-right-panels *,
 .tour-active .upload-panel,
 .tour-active .tool-message {
   pointer-events: none;
 }
 
 
+/* =========================================================
+   Animasjoner
+   ========================================================= */
 
+/* Lukk-animasjon for siste tour-steg: kortet flyr ned til venstre */
+.tour-card-closing {
+  animation: tour-card-slide-to-rail 0.8s ease-in-out forwards;
+}
+
+@keyframes tour-card-slide-to-rail {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    /* Juster disse verdiene hvis du vil treffe knappen mer nøyaktig på din skjerm */
+    transform: translate(-260%, 120%) scale(0.1);
+    opacity: 0.1;
+  }
+}

@@ -8,6 +8,7 @@ import LayersPanel from "./components/layout/LayersPanel.jsx";
 import UploadPanel from "./components/upload/UploadPanel.jsx";
 import IntroModal from "./components/onboarding/IntroModal.jsx";
 import TourOverlay from "./components/onboarding/TourOverlay.jsx";
+import BufferPanel from "./components/tools/BufferPanel.jsx"; // NYTT
 import tasks from "./data/tasks.js";
 import { LayersProvider } from "./context/LayersContext.jsx";
 import { useTour } from "./hooks/useTour.js";
@@ -16,6 +17,7 @@ export default function App() {
   const [activeTaskIndex, setActiveTaskIndex] = useState(0);
   const [toolMessage, setToolMessage] = useState(null);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [bufferOpen, setBufferOpen] = useState(false); // NYTT
   const [layersOpen, setLayersOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
 
@@ -37,12 +39,22 @@ export default function App() {
   const handleUploadClick = () => {
     if (tourActive) return;
     setUploadOpen(true);
+    setBufferOpen(false); // sørg for at kun ett panel er åpent av gangen
     setToolMessage(null);
   };
 
   const handleToolClick = (toolId) => {
     if (tourActive) return;
 
+    // Buffer får sitt eget panel
+    if (toolId === "buffer") {
+      setBufferOpen(true);
+      setUploadOpen(false);
+      setToolMessage(null);
+      return;
+    }
+
+    // Andre verktøy er fortsatt "dummy" inntil videre
     if (toolId === "difference") {
       setToolMessage(
         "Difference krever minst to lag med polygon-geometrier. Senere kan du bruke verktøyet til å se hva som blir igjen når et lag trekkes fra et annet."
@@ -52,6 +64,8 @@ export default function App() {
         `Verktøyet «${toolId}» blir koblet til faktiske GIS-operasjoner senere i prosjektet. Nå bruker du det som en del av arbeidsflyten.`
       );
     }
+
+    setBufferOpen(false);
   };
 
   const handleNextTask = () => {
@@ -65,14 +79,15 @@ export default function App() {
   const handleBackgroundClick = () => {
     if (tourActive) return;
     setUploadOpen(false);
+    setBufferOpen(false);
     setToolMessage(null);
-    setLayersOpen(false);
   };
 
   const handleRestartTour = () => {
     // Rydd opp litt før touren starter på nytt
     setToolMessage(null);
     setUploadOpen(false);
+    setBufferOpen(false);
     setLayersOpen(false);
     setTasksOpen(false);
     startTour();
@@ -95,7 +110,6 @@ export default function App() {
             highlight={highlightTools}
           />
 
-
           <div
             className={`map-column ${
               highlightMap ? "tour-highlight-map" : ""
@@ -106,6 +120,10 @@ export default function App() {
 
             {uploadOpen && (
               <UploadPanel onClose={() => setUploadOpen(false)} />
+            )}
+
+            {bufferOpen && (
+              <BufferPanel onClose={() => setBufferOpen(false)} />
             )}
 
             {toolMessage && (
@@ -208,7 +226,6 @@ export default function App() {
             onSkip={skipTour}
           />
         )}
-
       </div>
     </LayersProvider>
   );
