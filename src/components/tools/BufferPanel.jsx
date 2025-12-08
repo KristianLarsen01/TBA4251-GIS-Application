@@ -1,0 +1,128 @@
+// src/components/tools/BufferPanel.jsx
+import { useState } from "react";
+import { useLayers } from "../../context/LayersContext.jsx";
+import { createBufferedGeoJson } from "../../utils/buffer.js";
+
+export default function BufferPanel({ onClose }) {
+  const { layers, addLayer } = useLayers();
+  const [selectedLayerId, setSelectedLayerId] = useState("");
+  const [distanceMeters, setDistanceMeters] = useState(100);
+  const [status, setStatus] = useState("");
+
+  const hasLayers = Array.isArray(layers) && layers.length > 0;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setStatus("");
+
+    if (!hasLayers) {
+      setStatus("Du må ha minst ett lag i kartet for å bruke buffer.");
+      return;
+    }
+
+    const distance = Number(distanceMeters);
+
+    if (!selectedLayerId) {
+      setStatus("Velg et lag å buffre.");
+      return;
+    }
+
+    if (!Number.isFinite(distance) || distance <= 0) {
+      setStatus("Bufferavstanden må være et positivt tall i meter.");
+      return;
+    }
+
+    const sourceLayer = layers.find((l) => l.id === selectedLayerId);
+    if (!sourceLayer) {
+      setStatus("Fant ikke valgt lag.");
+      return;
+    }
+
+    try {
+      const bufferedData = createBufferedGeoJson(sourceLayer.data, distance);
+
+      const newLayerName = `${sourceLayer.name}_buffer_${distance}m`;
+
+      addLayer({
+        id: `${newLayerName}-${Date.now()}-${Math.random()
+          .toString(16)
+          .slice(2)}`,
+        name: newLayerName,
+        data: bufferedData,
+      });
+
+      setStatus(
+        `Buffer-lag er opprettet som «${newLayerName}». Du kan styre synligheten i lagpanelet.`
+      );
+    } catch (err) {
+      console.error(err);
+      setStatus(`Klarte ikke å buffre laget: ${err.message}`);
+    }
+  };
+
+  return (
+    <div className="buffer-panel" onClick={(e) => e.stopPropagation()}>
+      <div className="buffer-panel-header">
+        <h3>Buffer</h3>
+        <button className="buffer-close-btn" onClick={onClose}>
+          ×
+        </button>
+      </div>
+
+      <p className="buffer-panel-description">
+        Velg lag og angi en bufferavstand. Bufferen beregnes rundt alle
+        objektene i laget og legges til som et nytt lag.
+      </p>
+
+      {!hasLayers && (
+        <p className="buffer-panel-empty">
+          Du har ingen lag i kartet. Last opp ett eller flere GeoJSON-lag før
+          du bruker buffer-funksjonen.
+        </p>
+      )}
+
+      {hasLayers && (
+        <form className="buffer-form" onSubmit={handleSubmit}>
+          <div className="buffer-field">
+            <label htmlFor="buffer-layer">Lag som skal buffres</label>
+            <select
+              id="buffer-layer"
+              value={selectedLayerId}
+              onChange={(e) => setSelectedLayerId(e.target.value)}
+            >
+              <option value="">– Velg lag –</option>
+              {layers.map((layer) => (
+                <option key={layer.id} value={layer.id}>
+                  {layer.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="buffer-field buffer-field-inline">
+            <div className="buffer-field-distance">
+              <label htmlFor="buffer-distance">Avstand</label>
+              <input
+                id="buffer-distance"
+                type="number"
+                min="1"
+                step="1"
+                value={distanceMeters}
+                onChange={(e) => setDistanceMeters(e.target.value)}
+              />
+            </div>
+            <div className="buffer-field-unit">
+              <span>meter</span>
+            </div>
+          </div>
+
+          <button type="submit" className="buffer-submit">
+            Lag buffer
+          </button>
+        </form>
+      )}
+
+      {status && <p className="buffer-status">{status}</p>}
+    </div>
+  );
+}

@@ -1,10 +1,19 @@
-// src/components/upload/UploadPanel.jsx
 import { useState } from "react";
 import { useLayers } from "../../context/LayersContext.jsx";
 import { reprojectToWgs84IfNeeded } from "../../utils/projection.js";
 
+function getUniqueLayerName(baseName, existingNamesSet) {
+  let candidate = baseName;
+  let idx = 1;
+  while (existingNamesSet.has(candidate.toLowerCase())) {
+    candidate = `${baseName}${idx}`;
+    idx += 1;
+  }
+  return candidate;
+}
+
 export default function UploadPanel({ onClose }) {
-  const { addLayer } = useLayers();
+  const { layers, addLayer } = useLayers();
   const [status, setStatus] = useState("");
 
   const handleFiles = async (event) => {
@@ -12,6 +21,14 @@ export default function UploadPanel({ onClose }) {
     if (!files.length) return;
 
     setStatus("");
+
+    // Start med navnene som allerede finnes
+    const existingNames = new Set(
+      layers
+        .map((l) => l.name)
+        .filter(Boolean)
+        .map((n) => n.toLowerCase())
+    );
 
     for (const file of files) {
       try {
@@ -24,11 +41,15 @@ export default function UploadPanel({ onClose }) {
 
         data = reprojectToWgs84IfNeeded(data);
 
+        const baseName = file.name.replace(/\.(geo)?json$/i, "");
+        const uniqueName = getUniqueLayerName(baseName, existingNames);
+        existingNames.add(uniqueName.toLowerCase());
+
         addLayer({
           id: `${file.name}-${Date.now()}-${Math.random()
             .toString(16)
             .slice(2)}`,
-          name: file.name.replace(/\.(geo)?json$/i, ""),
+          name: uniqueName,
           data,
         });
       } catch (err) {

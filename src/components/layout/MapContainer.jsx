@@ -9,12 +9,11 @@ export default function MapContainer() {
   const dataLayerGroupRef = useRef(null);
   const { layers } = useLayers();
 
-  // Init kartet (bare én gang)
   useEffect(() => {
     if (mapRef.current || !mapElRef.current) return;
 
     const map = L.map(mapElRef.current, {
-      center: [63.4305, 10.3951], // Trondheim
+      center: [63.4305, 10.3951],
       zoom: 12,
       zoomControl: true,
     });
@@ -37,7 +36,6 @@ export default function MapContainer() {
     };
   }, []);
 
-  // Tegn GeoJSON-lag når layers endres
   useEffect(() => {
     const map = mapRef.current;
     const group = dataLayerGroupRef.current;
@@ -48,22 +46,64 @@ export default function MapContainer() {
     layers
       .filter((l) => l.visible !== false)
       .forEach((layer) => {
-        L.geoJSON(layer.data, {
-          style: {
-            color: layer.color || "#2563eb",
-            weight: 2,
-          },
-          pointToLayer: (feature, latlng) =>
-            L.circleMarker(latlng, {
-              radius: 6,
-              color: layer.color || "#16a34a",
-              weight: 1,
-              fillOpacity: 0.9,
-            }),
-        }).addTo(group);
-      });
+        const color = layer.color || "#2563eb";
+        const nameLower = (layer.name || "").toLowerCase();
+        const isBuffer = nameLower.includes("_buffer_");
 
-    // Ikke noe fitBounds her – kartet holder zoom/posisjon som før
+        const geoJsonLayer = L.geoJSON(layer.data, {
+          style: (feature) => {
+            const geomType = feature?.geometry?.type || "";
+            const isPolygonGeom = geomType.includes("Polygon");
+            const isLineGeom = geomType.includes("LineString");
+
+            const defaultFill = isBuffer ? 0.3 : 1.0;
+            const fillOpacity =
+              typeof layer.fillOpacity === "number"
+                ? layer.fillOpacity
+                : defaultFill;
+
+            if (isPolygonGeom) {
+              return {
+                color,
+                weight: isBuffer ? 1.5 : 1.2,
+                fillColor: color,
+                fillOpacity,
+              };
+            }
+
+            if (isLineGeom) {
+              return {
+                color,
+                weight: 3,
+                fillOpacity: 0,
+              };
+            }
+
+            return {
+              color,
+              weight: 2,
+            };
+          },
+
+          pointToLayer: (feature, latlng) => {
+            const defaultFill = isBuffer ? 0.4 : 1.0;
+            const fillOpacity =
+              typeof layer.fillOpacity === "number"
+                ? layer.fillOpacity
+                : defaultFill;
+
+            return L.circleMarker(latlng, {
+              radius: isBuffer ? 7 : 6,
+              color,
+              fillColor: color,
+              weight: 1.5,
+              fillOpacity,
+            });
+          },
+        });
+
+        geoJsonLayer.addTo(group);
+      });
   }, [layers]);
 
   return (
