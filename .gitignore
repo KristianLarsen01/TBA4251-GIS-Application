@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Store GIS-inndata / -utdata – ikke versjoner disse
+dataManipulation/input/
+dataManipulation/output/
+
