@@ -964,3 +964,60 @@
     opacity: 0.1;
   }
 }
+
+/* =========================================================
+   Respons: lav skjermhøyde -> bredere verktøylinje i 2 kolonner
+   ========================================================= */
+
+@media (max-height: 820px) {
+  /* Gjør selve railen bredere */
+  .tool-rail {
+    width: 180px;
+    padding-inline: 0.6rem;
+  }
+
+  /* La verktøy-knappene legge seg i to kolonner */
+  .tool-rail-group {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 0.5rem 0.4rem;
+  }
+
+  .tool-rail-button {
+    /* to knapper i bredden */
+    flex: 0 0 calc(50% - 0.25rem);
+  }
+
+  /* Liten justering for tour-knappen nederst */
+  .tool-rail-footer {
+    padding-top: 0.5rem;
+  }
+
+  /* Sortering av knapper:
+     anta at knapp 1–4 = Last opp + tegneverktøy
+     og knapp 5+ = analyseverktøy.
+     Analyse-verktøy (5+) får order 1 og havner "innerst",
+     tegn/last-opp (1–4) får order 2 og havner til høyre. */
+  .tool-rail-group .tool-rail-button:nth-child(n + 5) {
+    order: 1; /* analyse */
+  }
+
+  .tool-rail-group .tool-rail-button:nth-child(-n + 4) {
+    order: 2; /* last opp + punkt/linje/polygon */
+  }
+}
+
+/* =========================================================
+   Mobil/nettbrett-advarsel – alltid øverst
+   ========================================================= */
+
+.mobile-warning-backdrop {
+  z-index: 900000; /* over tour-backdrop (50) og vanlige modaler (20) */
+}
+
+.mobile-warning-modal {
+  z-index: 900005; /* over tour-modal (70) */
+}
+
+

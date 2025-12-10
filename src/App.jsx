@@ -1,5 +1,5 @@
 // src/App.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "./components/layout/Header.jsx";
 import ToolRail from "./components/layout/ToolRail.jsx";
 import MapContainer from "./components/layout/MapContainer.jsx";
@@ -35,6 +35,16 @@ export default function App() {
 
   const { stopDrawing, activeTool } = useDrawing();
   const { layers } = useLayers();
+
+  // NY: vis advarsel for veldig smale skjermer (mobil/nettbrett)
+  const [showMobileWarning, setShowMobileWarning] = useState(false);
+
+  useEffect(() => {
+    // Enkel heuristikk: under 900px bredde = sannsynlig mobil/nettbrett
+    if (window.innerWidth < 900) {
+      setShowMobileWarning(true);
+    }
+  }, []);
 
   // Tour-logikk flyttet til egen hook
   const {
@@ -291,6 +301,46 @@ export default function App() {
           onSkip={skipTour}
         />
       )}
+
+            {/* Mobil-advarsel (appen er laget for PC) */}
+      {showMobileWarning && (
+        <div className="modal-backdrop mobile-warning-backdrop">
+          <div className="modal mobile-warning-modal">
+            <div className="modal-header">
+              <h2>FotballGIS er laget for PC</h2>
+              <button
+                className="modal-close"
+                onClick={() => setShowMobileWarning(false)}
+                aria-label="Lukk"
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <p>
+                Denne applikasjonen er designet for bruk på datamaskin med stor
+                skjerm. Enkelte elementer kan bli vanskelige å bruke på mobil
+                eller nettbrett.
+              </p>
+              <p>
+                Hvis du har mulighet anbefales det å åpne siden på en PC eller
+                laptop.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowMobileWarning(false)}
+              >
+                Forstått – fortsett likevel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
+
+
