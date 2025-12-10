@@ -216,7 +216,7 @@
 .draw-hud {
   position: absolute;
   top: 1rem;
-  left: 1.25rem;             /* samme plassering som upload/clip-panelene */
+  left: 1.25rem; /* samme plassering som upload/clip-panelene */
   max-width: 340px;
   background: #f9fafb;
   color: #111827;
@@ -234,7 +234,6 @@
   gap: 0.45rem;
 }
 
-
 .draw-hud-header {
   display: flex;
   align-items: center;
@@ -249,6 +248,21 @@
   font-weight: 600;
 }
 
+/* Tekst i HUD */
+
+.draw-hud-body {
+  color: #4b5563;
+  line-height: 1.4;
+}
+
+.draw-hud-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.8rem;
+  color: #1f2937;
+}
+
 /* Små ikonknapper (check / kryss) i tegne-HUD */
 
 .draw-hud-actions {
@@ -257,7 +271,7 @@
 }
 
 /* =========================================================
-   Tegne-HUD ikonknapper (✓ grønn / ✕ rød)
+   Tegne-HUD ikonknapper (✓ grønn / ✕ svart)
    ========================================================= */
 
 .draw-hud-icon-button {
@@ -286,7 +300,7 @@
   background: #15803d;
 }
 
-
+/* Svart ✕ */
 .draw-hud-icon-button.cancel {
   border-color: #111827;
   background: #1f2937;
@@ -303,37 +317,9 @@
   cursor: default;
 }
 
-/* Optional: liten "pop" ved hover */
+/* Liten "pop" ved hover */
 .draw-hud-icon-button:hover:not(:disabled) {
   transform: translateY(-1px);
-}
-
-
-.draw-hud button {
-  border-radius: 999px;
-  border: 1px solid #d1d5db;
-  background: #ffffff;
-  padding: 0.3rem 0.75rem;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-
-.draw-hud button:disabled {
-  cursor: default;
-  opacity: 0.5;
-}
-
-.draw-hud-body {
-  color: #4b5563;
-  line-height: 1.4;
-}
-
-.draw-hud-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  font-size: 0.8rem;
-  color: #1f2937;
 }
 
 /* =========================================================
@@ -571,6 +557,112 @@
   line-height: 1.4;
 }
 
+/* === Felles stil for verktøy-former === */
+
+.tool-panel-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.6rem;
+}
+
+.tool-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tool-field label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+}
+
+.tool-field select,
+.tool-field input,
+.tool-field textarea {
+  border-radius: 0.6rem;
+  border: 1px solid #d1d5db;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.85rem;
+  background: #f9fafb;
+}
+
+.tool-field select:focus,
+.tool-field input:focus,
+.tool-field textarea:focus {
+  outline: none;
+  border-color: #16a34a;
+  box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.25);
+}
+
+.tool-panel-submit {
+  margin-top: 0.25rem;
+  align-self: flex-start;
+  border-radius: 999px;
+  border: none;
+  padding: 0.45rem 1.1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: #16a34a;
+  color: #f9fafb;
+}
+
+.tool-panel-submit:hover {
+  filter: brightness(1.05);
+}
+
+.tool-panel-status {
+  margin-top: 0.6rem;
+  font-size: 0.8rem;
+  color: #16a34a;
+}
+
+/* === Pen multiselect-liste for Clip (lag som skal klippes) === */
+
+.tool-multiselect-list {
+  border-radius: 0.6rem;
+  border: 1px solid #d1d5db;
+  background: #f3f4f6;
+  padding: 0.35rem 0.4rem;
+  max-height: 180px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.tool-multiselect-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.35rem;
+  border-radius: 0.45rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.tool-multiselect-item input[type="checkbox"] {
+  pointer-events: none; /* klikk håndteres på knappen */
+}
+
+.tool-multiselect-item:hover {
+  background: #e5e7eb;
+}
+
+.tool-multiselect-item.selected {
+  background: #e0f2fe;
+}
+
+.tool-multiselect-item.selected span {
+  font-weight: 500;
+}
+
 /* =========================================================
    Panel-skall oppe til høyre (Lag + Oppgave)
    ========================================================= */
@@ -598,17 +690,16 @@
 
 /* Når touren skal fremheve lag-/oppgavepanelene */
 .top-right-panels.tour-highlight-root {
-  z-index: 60;   /* over tour-backdrop (50) */
+  z-index: 60; /* over tour-backdrop (50) */
 }
 
 .panel-shell {
-  position: relative;              /* referanse for absolutt plassering */
+  position: relative; /* referanse for absolutt plassering */
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  pointer-events: auto;            /* panel + knapp skal være klikkbare */
+  pointer-events: auto; /* panel + knapp skal være klikkbare */
 }
-
 
 .panel-toggle-btn {
   border-radius: 999px;
@@ -634,7 +725,7 @@
    ikke i samme layout-boks som knappene */
 .panel-shell-content {
   position: absolute;
-  top: calc(100% + 0.4rem);        /* litt luft under knappen */
+  top: calc(100% + 0.4rem); /* litt luft under knappen */
   right: 0;
   opacity: 0;
   transform: translateY(-6px);
@@ -647,7 +738,7 @@
 .panel-shell-content.open {
   opacity: 1;
   transform: translateY(0);
-  pointer-events: auto;            /* nå kan du klikke inni panelene */
+  pointer-events: auto; /* nå kan du klikke inni panelene */
 }
 
 /* =========================================================
@@ -986,13 +1077,12 @@
 
 .layers-panel.tour-highlight-layers,
 .task-panel.tour-highlight-tasks {
-  position: relative;     /* nødvendig for at z-index skal virke */
+  position: relative; /* nødvendig for at z-index skal virke */
   z-index: 60;
   outline: 4px solid #facc15;
   outline-offset: 0;
   box-shadow: none;
 }
-
 
 /* Når omvisning er aktiv: deaktiver klikking på alt "under" overleggene */
 .tour-active .topbar,
@@ -1003,7 +1093,6 @@
 .tour-active .upload-panel {
   pointer-events: none;
 }
-
 
 /* =========================================================
    Animasjoner
@@ -1057,9 +1146,7 @@
 
   /* Sortering av knapper:
      anta at knapp 1–4 = Last opp + tegneverktøy
-     og knapp 5+ = analyseverktøy.
-     Analyse-verktøy (5+) får order 1 og havner "innerst",
-     tegn/last-opp (1–4) får order 2 og havner til høyre. */
+     og knapp 5+ = analyseverktøy. */
   .tool-rail-group .tool-rail-button:nth-child(n + 5) {
     order: 1; /* analyse */
   }
@@ -1074,11 +1161,9 @@
    ========================================================= */
 
 .mobile-warning-backdrop {
-  z-index: 900000; /* over tour-backdrop (50) og vanlige modaler (20) */
+  z-index: 90; /* over tour-backdrop (50) og vanlige modaler (20) */
 }
 
 .mobile-warning-modal {
-  z-index: 900005; /* over tour-modal (70) */
+  z-index: 95; /* over tour-modal (70) */
 }
-
-
