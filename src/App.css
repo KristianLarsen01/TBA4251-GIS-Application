@@ -212,22 +212,28 @@
    Tegneverktøy (HUD over kartet)
    ========================================================= */
 
+/* Tegne-HUD: liten modal ved siden av verktøylinja (venstre) */
 .draw-hud {
   position: absolute;
   top: 1rem;
-  right: 1.25rem;
-  max-width: 360px;
+  left: 1.25rem;             /* samme plassering som upload/clip-panelene */
+  max-width: 340px;
   background: #f9fafb;
   color: #111827;
   border-radius: 0.9rem;
   padding: 0.8rem 0.9rem;
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.55);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.65);
   font-size: 0.82rem;
-  z-index: 42;
+
+  /* Viktig: over Leaflet sine panes */
+  z-index: 1000;
+  pointer-events: auto;
+
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
 }
+
 
 .draw-hud-header {
   display: flex;
@@ -243,10 +249,65 @@
   font-weight: 600;
 }
 
+/* Små ikonknapper (check / kryss) i tegne-HUD */
+
 .draw-hud-actions {
   display: flex;
-  gap: 0.4rem;
+  gap: 0.3rem;
 }
+
+/* =========================================================
+   Tegne-HUD ikonknapper (✓ grønn / ✕ rød)
+   ========================================================= */
+
+.draw-hud-icon-button {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+/* Grønn ✓ */
+.draw-hud-icon-button.confirm {
+  border-color: #15803d;
+  background: #16a34a;
+  color: #f0fdf4; /* lys grønn tekst */
+}
+
+.draw-hud-icon-button.confirm:hover:not(:disabled) {
+  background: #15803d;
+}
+
+
+.draw-hud-icon-button.cancel {
+  border-color: #111827;
+  background: #1f2937;
+  color: #f9fafb;
+}
+
+.draw-hud-icon-button.cancel:hover:not(:disabled) {
+  background: #111827;
+}
+
+/* Disabled */
+.draw-hud-icon-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Optional: liten "pop" ved hover */
+.draw-hud-icon-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
 
 .draw-hud button {
   border-radius: 999px;

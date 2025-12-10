@@ -19,6 +19,8 @@ export default function MapContainer() {
   const { layers, addLayer } = useLayers();
   const { activeTool, sessionId, stopDrawing } = useDrawing();
 
+  /* ---------------- Kart-oppsett ---------------- */
+
   useEffect(() => {
     if (mapRef.current || !mapElRef.current) return;
 
@@ -46,6 +48,8 @@ export default function MapContainer() {
       dataLayerGroupRef.current = null;
     };
   }, []);
+
+  /* ---------------- Tegn lag etter layers-context ---------------- */
 
   useEffect(() => {
     const map = mapRef.current;
@@ -117,6 +121,8 @@ export default function MapContainer() {
       });
   }, [layers]);
 
+  /* ---------------- Reager på bytte av tegneverktøy ---------------- */
+
   useEffect(() => {
     activeToolRef.current = activeTool;
     const map = mapRef.current;
@@ -124,7 +130,7 @@ export default function MapContainer() {
 
     if (activeTool) {
       map.doubleClickZoom.disable();
-      // Lag lokal Set for navnegivning når tegning starter
+      // start ny navne-session når man begynner å tegne
       createdLayerNamesRef.current = new Set(
         layers
           .map((l) => l.name)
@@ -139,7 +145,9 @@ export default function MapContainer() {
     drawingPointsRef.current = [];
     setDrawingPoints([]);
     setDrawStatus("");
-  }, [activeTool, sessionId]);
+  }, [activeTool, sessionId, layers]);
+
+  /* ---------------- Event handlers (klikk / dblklikk / tastatur) ---------------- */
 
   useEffect(() => {
     if (!mapReady) return;
@@ -150,13 +158,8 @@ export default function MapContainer() {
       const tool = activeToolRef.current;
       if (!tool) return;
 
-      if (tool === "point") {
-        createLayerFromPoints([e.latlng], "point");
-        return;
-      }
-
+      // Polygon: klikk nær startpunkt -> lukk
       const pts = drawingPointsRef.current;
-      // Lukk polygon ved å klikke nær startpunktet
       if (tool === "polygon" && pts.length >= 3) {
         const first = pts[0];
         const dist = map.distance(first, e.latlng);
@@ -166,6 +169,7 @@ export default function MapContainer() {
         }
       }
 
+      // Punkt, linje og polygon: legg til punkt i skissen
       pushPoint(e.latlng);
     };
 
@@ -182,12 +186,13 @@ export default function MapContainer() {
         clearSketch();
         drawingPointsRef.current = [];
         setDrawingPoints([]);
+        setDrawStatus("");
         stopDrawing();
       }
 
       if (event.key === "Enter") {
         const tool = activeToolRef.current;
-        if (tool === "line" || tool === "polygon") {
+        if (tool === "line" || tool === "polygon" || tool === "point") {
           event.preventDefault();
           finishDrawing();
         }
@@ -203,7 +208,9 @@ export default function MapContainer() {
       map.off("dblclick", handleDblClick);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [mapReady]);
+  }, [mapReady, stopDrawing]);
+
+  /* ---------------- Hjelpefunksjoner for skisse ---------------- */
 
   const pushPoint = (latlng) => {
     drawingPointsRef.current = [...drawingPointsRef.current, latlng];
@@ -240,11 +247,12 @@ export default function MapContainer() {
     const tool = activeToolRef.current;
     if (!tool) return;
 
+    // Små oransje prikker i alle punkter
     if (!verticesLayerRef.current) {
       verticesLayerRef.current = L.layerGroup().addTo(map);
     }
-
     verticesLayerRef.current.clearLayers();
+
     points.forEach((p) =>
       L.circleMarker(p, {
         radius: 5,
@@ -255,6 +263,7 @@ export default function MapContainer() {
       }).addTo(verticesLayerRef.current)
     );
 
+    // Stiplet forhåndsvisning av linje/polygon
     const baseStyle = {
       color: "#f59e0b",
       weight: 2,
@@ -262,6 +271,15 @@ export default function MapContainer() {
       fillOpacity: tool === "polygon" ? 0.08 : 0,
       fillColor: "#f59e0b",
     };
+
+    if (tool === "point") {
+      // ingen linjer mellom punkter for punktverktøy
+      if (sketchLayerRef.current) {
+        sketchLayerRef.current.remove();
+        sketchLayerRef.current = null;
+      }
+      return;
+    }
 
     if (sketchLayerRef.current) {
       if (tool === "polygon") {
@@ -278,11 +296,18 @@ export default function MapContainer() {
     }
   };
 
+  /* ---------------- Lag ferdig geometri ---------------- */
+
   const finishDrawing = () => {
     const tool = activeToolRef.current;
     if (!tool) return;
 
     const points = drawingPointsRef.current;
+
+    if (tool === "point" && points.length < 1) {
+      setDrawStatus("Punktlag trenger minst ett punkt.");
+      return;
+    }
 
     if (tool === "line" && points.length < 2) {
       setDrawStatus("Linje trenger minst to punkter.");
@@ -304,7 +329,6 @@ export default function MapContainer() {
       candidate = `${base}${idx}`;
       idx += 1;
     }
-    // Legg til i lokal Set så neste lag får rett navn
     createdLayerNamesRef.current.add(candidate.toLowerCase());
     return candidate;
   };
@@ -314,21 +338,57 @@ export default function MapContainer() {
 
     const coords = points.map(({ lat, lng }) => [lng, lat]);
 
-    let geometry;
     let baseName;
+    let data;
 
     if (tool === "point") {
-      geometry = { type: "Point", coordinates: coords[0] };
       baseName = "Punkt";
-    } else if (tool === "line") {
-      geometry = { type: "LineString", coordinates: coords };
-      baseName = "Linje";
-    } else {
-      geometry = {
-        type: "Polygon",
-        coordinates: [[...coords, coords[0]]],
+
+      const features = coords.map((c) => ({
+        type: "Feature",
+        properties: {},
+        geometry: {
+          type: "Point",
+          coordinates: c,
+        },
+      }));
+
+      data = {
+        type: "FeatureCollection",
+        features,
       };
+    } else if (tool === "line") {
+      baseName = "Linje";
+
+      data = {
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            properties: {},
+            geometry: {
+              type: "LineString",
+              coordinates: coords,
+            },
+          },
+        ],
+      };
+    } else {
       baseName = "Polygon";
+
+      data = {
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            properties: {},
+            geometry: {
+              type: "Polygon",
+              coordinates: [[...coords, coords[0]]],
+            },
+          },
+        ],
+      };
     }
 
     const name = buildUniqueName(baseName);
@@ -336,16 +396,7 @@ export default function MapContainer() {
     addLayer({
       id: `draw-${tool}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
       name,
-      data: {
-        type: "FeatureCollection",
-        features: [
-          {
-            type: "Feature",
-            properties: {},
-            geometry,
-          },
-        ],
-      },
+      data,
     });
 
     clearSketch();
@@ -355,12 +406,18 @@ export default function MapContainer() {
     stopDrawing();
   };
 
+  /* ---------------- HUD-tekst ---------------- */
+
   const helperText = {
-    point: "Klikk i kartet for å plassere et punktlag.",
-    line: "Klikk for å legge til punkter. Dobbeltklikk eller Enter for å fullføre linjen.",
+    point:
+      "Klikk i kartet for å legge til punkt. Trykk Enter eller ✓ for å lagre laget.",
+    line:
+      "Klikk for å legge til punkter. Dobbeltklikk, Enter eller ✓ for å fullføre linjen.",
     polygon:
-      "Klikk for å tegne polygon. Klikk på startpunktet, dobbeltklikk eller Enter for å lukke.",
+      "Klikk for å tegne polygon. Klikk på startpunktet, dobbeltklikk, Enter eller ✓ for å lukke.",
   };
+
+  /* ---------------- Render ---------------- */
 
   return (
     <div className="map-container">
@@ -390,18 +447,26 @@ export default function MapContainer() {
             </div>
 
             <div className="draw-hud-actions">
-              {activeTool !== "point" && (
-                <button
-                  onClick={finishDrawing}
-                  disabled={
-                    (activeTool === "line" && drawingPoints.length < 2) ||
-                    (activeTool === "polygon" && drawingPoints.length < 3)
-                  }
-                >
-                  Fullfør
-                </button>
-              )}
+              {/* ✓ – fullfør */}
+              {/* ✓ – fullfør */}
               <button
+                type="button"
+                className="draw-hud-icon-button confirm"
+                onClick={finishDrawing}
+                aria-label="Fullfør tegning og lagre laget"
+                disabled={
+                  (activeTool === "point" && drawingPoints.length < 1) ||
+                  (activeTool === "line" && drawingPoints.length < 2) ||
+                  (activeTool === "polygon" && drawingPoints.length < 3)
+                }
+              >
+                ✓
+              </button>
+
+              {/* ✕ – avbryt */}
+              <button
+                type="button"
+                className="draw-hud-icon-button cancel"
                 onClick={() => {
                   clearSketch();
                   drawingPointsRef.current = [];
@@ -409,9 +474,11 @@ export default function MapContainer() {
                   setDrawStatus("");
                   stopDrawing();
                 }}
+                aria-label="Avbryt tegning"
               >
-                Avbryt
+                ✕
               </button>
+
             </div>
           </div>
 
@@ -419,10 +486,14 @@ export default function MapContainer() {
 
           {drawStatus && <div className="draw-hud-steps">{drawStatus}</div>}
 
-          {!drawStatus && drawingPoints.length > 0 && activeTool !== "point" && (
+          {!drawStatus && drawingPoints.length > 0 && (
             <div className="draw-hud-steps">
               <span>{`Punkter lagt til: ${drawingPoints.length}`}</span>
-              <span>Dobbeltklikk eller Enter for å lagre laget.</span>
+              <span>
+                {activeTool === "point"
+                  ? "Trykk Enter eller ✓ for å lagre laget."
+                  : "Dobbeltklikk, Enter eller ✓ for å lagre laget."}
+              </span>
             </div>
           )}
         </div>
