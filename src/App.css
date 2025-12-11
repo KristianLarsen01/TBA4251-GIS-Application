@@ -209,6 +209,154 @@
 }
 
 /* =========================================================
+   Bakgrunnskart-velger nederst til høyre i kartet
+   ========================================================= */
+
+.basemap-switcher {
+  position: absolute;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 1100; /* over Leaflet + task-panel */
+}
+
+/* Hovedknapp – forankret nede i hjørnet */
+.basemap-toggle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  transform: translateY(0);
+  transition: transform 0.22s ease;
+}
+
+/* Når menyen er åpen: skyv knappen opp over panelet */
+.basemap-switcher.menu-open .basemap-toggle {
+  transform: translateY(-14rem); /* høyden du likte */
+}
+
+.basemap-toggle:hover .basemap-thumb-active {
+  transform: scale(1.04);
+}
+
+/* Generell thumbnail */
+.basemap-thumb {
+  border-radius: 0.6rem;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid rgba(148, 163, 184, 0.8);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
+}
+
+/* Thumbnail i knappen */
+.basemap-thumb-active {
+  width: 40px;
+  height: 40px;
+  border-radius: 0.7rem;
+  box-shadow:
+    0 0 0 2px rgba(191, 219, 254, 0.95),
+    0 12px 28px rgba(15, 23, 42, 0.85);
+}
+
+/* Større thumbnails inni menyen */
+.basemap-thumb-menu {
+  width: 70px;
+  height: 70px;
+}
+
+/* Meny – lukket tilstand (default) */
+.basemap-menu {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 260px; /* 3 x 2 grid */
+  background: rgba(15, 23, 42, 0.97);
+  border-radius: 1rem;
+  padding: 0.7rem 0.8rem 0.8rem;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
+
+  opacity: 0;
+  transform: translateY(8px) scale(0.8);
+  transform-origin: bottom right;
+  pointer-events: none;
+
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+/* Åpen tilstand – “vokser” ut av hjørnet */
+.basemap-switcher.menu-open .basemap-menu {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* Grid med 6 alternativer */
+.basemap-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem 0.65rem;
+}
+
+.basemap-menu-item {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  color: #e5e7eb;
+  font-size: 0.75rem;
+}
+
+.basemap-menu-label {
+  font-size: 0.75rem;
+  line-height: 1.1;
+  text-align: center;
+}
+
+/* Hover / valgt */
+.basemap-menu-item .basemap-thumb:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 2px rgba(248, 250, 252, 0.7);
+}
+
+.basemap-thumb.selected {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.9);
+  border-color: rgba(22, 163, 74, 0.9);
+}
+
+/* === Screenshot-previews === */
+
+.basemap-thumb--streets {
+  background-image: url("/map_thumbs/thumb_streets.png");
+}
+.basemap-thumb--navday {
+  background-image: url("/map_thumbs/thumb_navday.png");
+}
+.basemap-thumb--outdoors {
+  background-image: url("/map_thumbs/thumb_outdoors.png");
+}
+.basemap-thumb--light {
+  background-image: url("/map_thumbs/thumb_light.png");
+}
+.basemap-thumb--dark {
+  background-image: url("/map_thumbs/thumb_dark.png");
+}
+.basemap-thumb--satellite {
+  background-image: url("/map_thumbs/thumb_satellite.png");
+}
+
+/* =========================================================
    Tegneverktøy (HUD over kartet)
    ========================================================= */
 

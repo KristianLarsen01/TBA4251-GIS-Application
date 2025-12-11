@@ -27,3 +27,5 @@ dist-ssr
 dataManipulation/input/
 dataManipulation/output/
 
+.env
+.env.*
