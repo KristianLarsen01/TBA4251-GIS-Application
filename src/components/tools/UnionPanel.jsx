@@ -1,4 +1,3 @@
-// src/components/tools/UnionPanel.jsx
 import { useState, useEffect } from "react";
 import { useLayers } from "../../context/LayersContext.jsx";
 import { unionGeoJson } from "../../utils/union.js";
@@ -9,60 +8,40 @@ export default function UnionPanel({ onClose }) {
   const [layerBId, setLayerBId] = useState("");
   const [status, setStatus] = useState("");
 
-  const hasLayers = Array.isArray(layers) && layers.length > 0;
-
-  // Finn alle polygonlag (Polygon eller MultiPolygon)
   const polygonLayers = layers.filter((layer) => {
     const data = layer?.data;
     if (!data || !Array.isArray(data.features)) return false;
-
-    const featWithGeom = data.features.find((f) => f && f.geometry);
-    if (!featWithGeom || !featWithGeom.geometry) return false;
-
-    const t = featWithGeom.geometry.type;
+    const feat = data.features.find((f) => f?.geometry);
+    if (!feat?.geometry) return false;
+    const t = feat.geometry.type;
     return t === "Polygon" || t === "MultiPolygon";
   });
 
-  // Gi "polygonforslag" i feltene når lagene endres
+  // Foreslå to nyeste polygonlag
   useEffect(() => {
-    if (!polygonLayers.length) {
-      setLayerAId("");
-      setLayerBId("");
+    if (polygonLayers.length < 2) {
+      setLayerAId(polygonLayers[0]?.id ?? "");
+      setLayerBId(polygonLayers[0]?.id ?? "");
       return;
     }
 
-    // Sjekk om nåværende valg fortsatt finnes
     const aStill = polygonLayers.some((l) => l.id === layerAId);
     const bStill = polygonLayers.some((l) => l.id === layerBId);
+    if (aStill && bStill) return;
 
-    if (aStill && bStill) return; // begge er fortsatt gyldige → beholder dem
-
-    if (polygonLayers.length === 1) {
-      // Ett polygonlag → dissolve-forslag (samme lag i begge felter)
-      const only = polygonLayers[0];
-      setLayerAId(only.id);
-      setLayerBId(only.id);
-    } else {
-      // To eller flere → foreslå de to nyeste polygonlagene
-      const last = polygonLayers[polygonLayers.length - 1];
-      const prev = polygonLayers[polygonLayers.length - 2];
-      setLayerAId(prev.id);
-      setLayerBId(last.id);
-    }
+    const last = polygonLayers[polygonLayers.length - 1];
+    const prev = polygonLayers[polygonLayers.length - 2];
+    setLayerAId(prev.id);
+    setLayerBId(last.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layers]); // polygonLayers er avledet av layers
+  }, [layers]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setStatus("");
 
-    if (!hasLayers) {
-      setStatus("Du må ha minst ett lag i kartet for å bruke Union.");
-      return;
-    }
-
-    if (!polygonLayers.length) {
-      setStatus("Union støtter bare polygonlag. Du har ingen polygonlag ennå.");
+    if (polygonLayers.length < 2) {
+      setStatus("Union krever minst to polygonlag i kartet.");
       return;
     }
 
@@ -71,9 +50,13 @@ export default function UnionPanel({ onClose }) {
       return;
     }
 
+    if (layerAId === layerBId) {
+      setStatus("Union krever to forskjellige lag. Bruk Dissolve-verktøyet for å slå sammen ett lag.");
+      return;
+    }
+
     const layerA = layers.find((l) => l.id === layerAId);
     const layerB = layers.find((l) => l.id === layerBId);
-
     if (!layerA || !layerB) {
       setStatus("Fant ikke ett eller begge valgte lag.");
       return;
@@ -81,17 +64,10 @@ export default function UnionPanel({ onClose }) {
 
     try {
       const unionFC = unionGeoJson(layerA.data, layerB.data);
-      const sameLayer = layerAId === layerBId;
-
-      const baseName = sameLayer
-        ? `Dissolve ${layerA.name}`
-        : `Union (${layerA.name} + ${layerB.name})`;
-
-      const newName = `${baseName}`;
+      const newName = `Union (${layerA.name} + ${layerB.name})`;
 
       addLayer({
-        id:
-          `union-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        id: `union-${Date.now()}-${Math.random().toString(16).slice(2)}`,
         name: newName,
         data: unionFC,
       });
@@ -99,10 +75,7 @@ export default function UnionPanel({ onClose }) {
       setStatus(`Nytt lag "${newName}" ble opprettet.`);
     } catch (err) {
       console.error(err);
-      setStatus(
-        err?.message ||
-          "Union-operasjonen feilet. Sjekk at lagene er gyldige polygonlag."
-      );
+      setStatus(err?.message || "Union-operasjonen feilet.");
     }
   };
 
@@ -110,35 +83,21 @@ export default function UnionPanel({ onClose }) {
     <div className="tool-panel" onClick={(e) => e.stopPropagation()}>
       <div className="tool-panel-header">
         <h3>Union</h3>
-        <button className="tool-panel-close-btn" onClick={onClose}>
-          ×
-        </button>
+        <button className="tool-panel-close-btn" onClick={onClose}>×</button>
       </div>
 
-      {!hasLayers ? (
+      {polygonLayers.length < 2 ? (
         <div className="tool-panel-error">
-          <p className="tool-panel-error-title">Ingen lag i kartet</p>
-          <p className="tool-panel-error-message">
-            Last opp eller tegn minst ett polygonlag for å bruke Union.
-          </p>
-        </div>
-      ) : !polygonLayers.length ? (
-        <div className="tool-panel-error">
-          <p className="tool-panel-error-title">Ingen polygonlag</p>
-          <p className="tool-panel-error-message">
-            Union støtter bare polygon- og multipolygon-lag.
-          </p>
+          <p className="tool-panel-error-title">Ikke nok polygonlag</p>
+          <p className="tool-panel-error-message">Union krever minst to polygonlag.</p>
           <p className="tool-panel-hint">
-            Last opp eller tegn et polygonlag, f.eks. kommunegrenser eller
-            analyseområder.
+            Last opp eller tegn minst to polygonlag (Polygon / MultiPolygon).
           </p>
         </div>
       ) : (
         <>
           <p className="tool-panel-description">
-            Union slår sammen to polygonlag til ett, og fjerner interne
-            grenser. Du kan også velge samme lag i begge nedtrekkene for å
-            gjøre en klassisk <em>dissolve</em> av et enkelt lag.
+            Union slår sammen <strong>to polygonlag</strong> til ett nytt lag.
           </p>
 
           <form className="tool-panel-form" onSubmit={handleSubmit}>
@@ -150,14 +109,10 @@ export default function UnionPanel({ onClose }) {
                 onChange={(e) => setLayerAId(e.target.value)}
               >
                 {polygonLayers.map((layer) => (
-                  <option key={layer.id} value={layer.id}>
-                    {layer.name}
-                  </option>
+                  <option key={layer.id} value={layer.id}>{layer.name}</option>
                 ))}
               </select>
-              <p className="tool-panel-hint">
-                Kun polygonlag vises her. Nyeste polygonlag foreslås automatisk.
-              </p>
+              <p className="tool-panel-hint">Kun polygonlag vises her. To nyeste foreslås automatisk.</p>
             </div>
 
             <div className="tool-field">
@@ -168,19 +123,13 @@ export default function UnionPanel({ onClose }) {
                 onChange={(e) => setLayerBId(e.target.value)}
               >
                 {polygonLayers.map((layer) => (
-                  <option key={layer.id} value={layer.id}>
-                    {layer.name}
-                  </option>
+                  <option key={layer.id} value={layer.id}>{layer.name}</option>
                 ))}
               </select>
-              <p className="tool-panel-hint">
-                Velg samme lag i begge felter for å dissolve det laget.
-              </p>
+              <p className="tool-panel-hint">Må være forskjellig fra Lag A.</p>
             </div>
 
-            <button type="submit" className="tool-panel-submit">
-              Kjør union
-            </button>
+            <button type="submit" className="tool-panel-submit">Kjør union</button>
           </form>
         </>
       )}

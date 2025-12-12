@@ -44,6 +44,16 @@ export function LayersProvider({ children }) {
     );
   };
 
+  const toggleVisibility = (id) => {
+  setLayers((prev) =>
+    prev.map((layer) =>
+      layer.id === id
+        ? { ...layer, visible: layer.visible === false ? true : false }
+        : layer
+    )
+  );
+};
+
   const removeLayer = (id) => {
     setLayers((prev) => prev.filter((l) => l.id !== id));
   };
@@ -71,6 +81,7 @@ export function LayersProvider({ children }) {
     removeLayer,
     moveLayer,
     clearLayers,
+    toggleVisibility,
   };
 
   return (

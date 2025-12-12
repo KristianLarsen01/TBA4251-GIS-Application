@@ -31,7 +31,7 @@ export default function ToolRail({
     }
 
     // Buffer og andre analyseverktøy – disabled med feilmelding
-    if (id === "buffer" || id === "intersect" || id === "union" || id === "difference" || id === "clip" || id === "areaFilter" || id === "featureExtractor") {
+    if (id === "buffer" || id === "intersect" || id === "union" || id === "difference" || id === "clip" || id === "areaFilter" || id === "featureExtractor" || id === "dissolve") {
       stopDrawing();
       onToolClick?.(id);
       return;
@@ -146,6 +146,18 @@ export default function ToolRail({
             <span>Difference</span>
           </span>
         </button>
+
+        <button
+          className="tool-rail-button"
+          onClick={() => handleClick("dissolve")}
+          title="Dissolve – slå sammen interne grenser i ett polygonlag (valgfritt per property)."
+        >
+          <span className="tool-rail-icon">≋</span>
+          <span className="tool-rail-label">
+            <span>Dissolve</span>
+          </span>
+        </button>
+
 
         <button
           className="tool-rail-button"

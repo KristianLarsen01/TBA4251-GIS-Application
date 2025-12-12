@@ -15,6 +15,7 @@ import DifferencePanel from "./components/tools/DifferencePanel.jsx";
 import ClipPanel from "./components/tools/ClipPanel.jsx";
 import AreaFilterPanel from "./components/tools/AreaFilterPanel.jsx";
 import FeatureExtractorPanel from "./components/tools/FeatureExtractorPanel.jsx";
+import DissolvePanel from "./components/tools/DissolvePanel.jsx";
 import tasks from "./data/tasks.js";
 import { useTour } from "./hooks/useTour.js";
 import { useDrawing } from "./context/DrawingContext.jsx";
@@ -32,6 +33,8 @@ export default function App() {
   const [featureExtractorOpen, setFeatureExtractorOpen] = useState(false);
   const [layersOpen, setLayersOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
+  const [dissolveOpen, setDissolveOpen] = useState(false);
+
 
   const { stopDrawing, activeTool } = useDrawing();
   const { layers } = useLayers();
@@ -72,6 +75,7 @@ export default function App() {
     setClipOpen(false);
     setAreaFilterOpen(false);
     setFeatureExtractorOpen(false);
+    setDissolveOpen(false);
   };
 
   const handleToolClick = (toolId) => {
@@ -90,6 +94,7 @@ export default function App() {
       setClipOpen(false);
       setAreaFilterOpen(false);
       setFeatureExtractorOpen(false);
+      setDissolveOpen(false);
     };
 
     closePanels();
@@ -109,6 +114,8 @@ export default function App() {
       setAreaFilterOpen(true);
     } else if (toolId === "featureExtractor") {
       setFeatureExtractorOpen(true);
+    } else if (toolId === "dissolve") {
+      setDissolveOpen(true);
     }
   };
 
@@ -132,6 +139,7 @@ export default function App() {
     setClipOpen(false);
     setAreaFilterOpen(false);
     setFeatureExtractorOpen(false);
+    setDissolveOpen(false);
   };
 
   const handleRestartTour = () => {
@@ -146,6 +154,7 @@ export default function App() {
     setFeatureExtractorOpen(false);
     setLayersOpen(false);
     setTasksOpen(false);
+    setDissolveOpen(false);
     stopDrawing();
     startTour();
   };
@@ -171,6 +180,7 @@ export default function App() {
             setClipOpen(false);
             setAreaFilterOpen(false);
             setFeatureExtractorOpen(false);
+            setDissolveOpen(false);
           }}
           tourActive={tourActive}
           highlight={highlightTools}
@@ -214,6 +224,10 @@ export default function App() {
 
           {featureExtractorOpen && (
             <FeatureExtractorPanel onClose={() => setFeatureExtractorOpen(false)} />
+          )}
+
+          {dissolveOpen && (
+            <DissolvePanel onClose={() => setDissolveOpen(false)} />
           )}
         </div>
 

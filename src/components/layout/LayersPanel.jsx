@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useLayers } from "../../context/LayersContext.jsx";
 
 export default function LayersPanel({ onClose, highlight }) {
-  const { layers, updateLayer, removeLayer, moveLayer } = useLayers();
+  const { layers, updateLayer, removeLayer, moveLayer, toggleVisibility } = useLayers();
   const [localColors, setLocalColors] = useState({});
   const [localOpacity, setLocalOpacity] = useState({});
   const colorTimersRef = useRef({});
@@ -113,9 +113,9 @@ export default function LayersPanel({ onClose, highlight }) {
 
       <div className="layers-column-header">
         <span className="layers-col-label layers-col-color">Farge</span>
-        <span className="layers-col-label layers-col-visible">Aktiv</span>
+        <span className="layers-col-label layers-col-visible">Synlig</span>
         <span className="layers-col-label layers-col-name">Navn</span>
-        <span className="layers-col-label layers-col-opacity">Synlighet</span>
+        <span className="layers-col-label layers-col-opacity">Gjennomsiktighet</span>
         <span className="layers-col-label layers-col-actions">
           Rekkef./slett
         </span>
@@ -146,13 +146,32 @@ export default function LayersPanel({ onClose, highlight }) {
               />
 
               {/* Synlighet */}
-              <input
-                type="checkbox"
-                checked={layer.visible !== false}
-                onChange={(e) =>
-                  updateLayer(layer.id, { visible: e.target.checked })
-                }
-              />
+              <button
+                type="button"
+                className={`layer-visibility-toggle ${
+                  layer.visible === false ? "hidden" : ""
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation(); 
+                  toggleVisibility(layer.id);
+                }}
+                title={layer.visible === false ? "Vis lag" : "Skjul lag"}
+              >
+                {layer.visible === false ? (
+                  // SKJULT (ingen creepy øye)
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="#888" strokeWidth="2" />
+                    <path d="M4 20L20 4" stroke="#888" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                ) : (
+                  // SYNLIG
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="#444" strokeWidth="2" />
+                  </svg>
+                )}
+              </button>
+
+
 
               {/* Navn */}
               <input
