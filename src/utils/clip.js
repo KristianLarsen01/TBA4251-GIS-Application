@@ -17,7 +17,6 @@ function toFeatureCollection(geojson) {
     return featureCollection([geojson]);
   }
 
-  // Antar ren geometri
   return featureCollection([
     { type: "Feature", properties: {}, geometry: geojson },
   ]);
@@ -34,8 +33,7 @@ function isPointLike(type) {
 }
 
 /**
- * Flater ut MultiPolygon til flere Polygon-features.
- * (Samme som i koden du limte inn.)
+ * Flater ut MultiPolygon → Polygon-features
  */
 function getMaskPolygons(maskFC) {
   const polys = [];
@@ -45,7 +43,11 @@ function getMaskPolygons(maskFC) {
     if (!g) return;
 
     if (g.type === "Polygon") {
-      polys.push(f);
+      polys.push({
+        type: "Feature",
+        properties: { ...(f.properties || {}) },
+        geometry: g,
+      });
     } else if (g.type === "MultiPolygon") {
       g.coordinates.forEach((coords) => {
         polys.push({
@@ -61,40 +63,41 @@ function getMaskPolygons(maskFC) {
   });
 
   if (!polys.length) {
-    throw new Error(
-      "Maske-laget må ha polygon- eller multipolygon-geometri."
-    );
+    throw new Error("Maske-laget må ha polygon- eller multipolygon-geometri.");
   }
 
   return polys;
 }
 
-/** Brukes til linje/punkt-masken (union av alle maskepolygon) */
+/**
+ * Union av alle maskepolygoner → ÉN maske (Polygon eller MultiPolygon)
+ */
 function dissolveMask(polys) {
   if (!polys.length) return null;
   if (polys.length === 1) return polys[0];
 
-  let current = polys[0];
-  for (let i = 1; i < polys.length; i++) {
-    try {
-      const u = turf.union(current, polys[i]);
-      if (u && u.geometry) current = u;
-    } catch (e) {
-      console.warn("union feilet for polygon-par:", e);
+  try {
+    return turf.union(featureCollection(polys));
+  } catch {
+    let acc = polys[0];
+    for (let i = 1; i < polys.length; i++) {
+      try {
+        const u = turf.union(acc, polys[i]);
+        if (u?.geometry) acc = u;
+      } catch {
+        /* ignore */
+      }
     }
+    return acc;
   }
-  return current;
 }
 
 /**
- * Robust wrapper rundt @turf/intersect (for polygon/multipolygon).
- * (Direkte fra koden du limte inn.)
+ * Robust intersect-wrapper
  */
 function turfIntersect(a, b) {
-  const fn = intersect;
-
   try {
-    return fn(a, b);
+    return intersect(a, b);
   } catch (e) {
     const msg = e?.message || "";
     if (
@@ -104,55 +107,20 @@ function turfIntersect(a, b) {
       throw e;
     }
 
-    const featA =
-      a && a.type === "Feature"
-        ? a
-        : { type: "Feature", properties: {}, geometry: a };
-    const featB =
-      b && b.type === "Feature"
-        ? b
-        : { type: "Feature", properties: {}, geometry: b };
-
-    const fc = featureCollection([featA, featB]);
-    return fn(fc);
+    const fa = a.type === "Feature" ? a : { type: "Feature", properties: {}, geometry: a };
+    const fb = b.type === "Feature" ? b : { type: "Feature", properties: {}, geometry: b };
+    return intersect(featureCollection([fa, fb]));
   }
 }
 
-/* ----------------------- Polygon-klipping (din gamle) ----------------------- */
+/* ----------------------- Polygon-klipping (FIKSET) ----------------------- */
 
 function clipPolygons(sourceFC, maskFC) {
   const maskPolys = getMaskPolygons(maskFC);
-  const out = [];
-
-  sourceFC.features.forEach((src) => {
-    if (!src.geometry || !isPolygonLike(src.geometry.type)) return;
-
-    maskPolys.forEach((mask) => {
-      const result = turfIntersect(src, mask);
-      if (result) {
-        result.properties = { ...(src.properties || {}) };
-        out.push(result);
-      }
-    });
-  });
-
-  if (!out.length) {
-    throw new Error("Ingen overlapp mellom lagene. Ingen klippet geometri.");
-  }
-
-  return featureCollection(out);
-}
-
-/* ----------------------- Punkt-klipping (nåværende logikk) ----------------------- */
-
-function clipPoints(sourceFC, maskFC) {
-  const maskPolys = getMaskPolygons(maskFC);
   const union = dissolveMask(maskPolys);
 
-  if (!union || !union.geometry) {
-    throw new Error(
-      "Maske-laget må ha polygon- eller multipolygon-geometri."
-    );
+  if (!union?.geometry) {
+    throw new Error("Klarte ikke å lage gyldig maske.");
   }
 
   const maskFeat = {
@@ -164,90 +132,86 @@ function clipPoints(sourceFC, maskFC) {
   const out = [];
 
   sourceFC.features.forEach((src) => {
-    if (!src.geometry || !isPointLike(src.geometry.type)) return;
+    if (!src.geometry || !isPolygonLike(src.geometry.type)) return;
 
-    if (src.geometry.type === "Point") {
-      const inside = booleanPointInPolygon(src, maskFeat);
-      if (inside) out.push(src);
-    } else if (src.geometry.type === "MultiPoint") {
-      src.geometry.coordinates.forEach((coord) => {
-        const pt = {
-          type: "Feature",
-          properties: { ...(src.properties || {}) },
-          geometry: { type: "Point", coordinates: coord },
-        };
-        const inside = booleanPointInPolygon(pt, maskFeat);
-        if (inside) out.push(pt);
-      });
-    }
+    const res = turfIntersect(src, maskFeat);
+    if (!res?.geometry) return;
+
+    res.properties = { ...(src.properties || {}) };
+    out.push(res);
   });
 
   if (!out.length) {
-    throw new Error(
-      "Ingen punkter ligger innenfor maskepolygonet. Ingen lag ble laget."
-    );
+    throw new Error("Ingen overlapp mellom lagene. Ingen klippet geometri.");
   }
 
   return featureCollection(out);
 }
 
-/* ----------------------- Linje-klipping (den som funker nå) ----------------------- */
+/* ----------------------- Punkt-klipping ----------------------- */
+
+function clipPoints(sourceFC, maskFC) {
+  const maskPolys = getMaskPolygons(maskFC);
+  const union = dissolveMask(maskPolys);
+
+  if (!union?.geometry) {
+    throw new Error("Maske-laget må ha polygon-geometri.");
+  }
+
+  const maskFeat = { type: "Feature", properties: {}, geometry: union.geometry };
+  const out = [];
+
+  sourceFC.features.forEach((src) => {
+    if (!src.geometry || !isPointLike(src.geometry.type)) return;
+
+    if (src.geometry.type === "Point") {
+      if (booleanPointInPolygon(src, maskFeat)) out.push(src);
+    } else {
+      src.geometry.coordinates.forEach((coord) => {
+        const pt = point(coord, { ...(src.properties || {}) });
+        if (booleanPointInPolygon(pt, maskFeat)) out.push(pt);
+      });
+    }
+  });
+
+  if (!out.length) {
+    throw new Error("Ingen punkter ligger innenfor maskepolygonet.");
+  }
+
+  return featureCollection(out);
+}
+
+/* ----------------------- Linje-klipping ----------------------- */
 
 function clipSingleLine(lineFeat, maskFeat) {
   const outSegments = [];
   const maskBorder = turf.polygonToLine(maskFeat);
-
   const coords = lineFeat.geometry.coordinates;
-  if (coords.length < 2) return outSegments;
 
   for (let i = 0; i < coords.length - 1; i++) {
     const a = coords[i];
     const b = coords[i + 1];
-
     const seg = lineString([a, b]);
-    const breakPoints = [a, b];
 
-    // Krysningspunkter mellom segment og maskekant
-    const isects = turf.lineIntersect(seg, maskBorder);
-    isects.features.forEach((f) => {
-      if (f.geometry && f.geometry.type === "Point") {
-        breakPoints.push(f.geometry.coordinates);
-      }
+    const breakPoints = [a, b];
+    turf.lineIntersect(seg, maskBorder).features.forEach((f) => {
+      if (f.geometry?.type === "Point") breakPoints.push(f.geometry.coordinates);
     });
 
-    // Ingen ekstra punkter → sjekk hele segmentet
-    if (breakPoints.length === 2) {
-      const mid = point([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]);
-      const inside = booleanPointInPolygon(mid, maskFeat);
-      if (inside) {
-        outSegments.push(
-          lineString([a, b], { ...(lineFeat.properties || {}) })
-        );
-      }
-      continue;
-    }
+    const withDist = breakPoints
+      .map((c) => ({
+        coord: c,
+        dist: turf.distance(point(a), point(c)),
+      }))
+      .sort((x, y) => x.dist - y.dist);
 
-    // Sorter punkter langs segmentet etter avstand fra a
-    const withDist = breakPoints.map((c) => ({
-      coord: c,
-      dist: turf.distance(point(a), point(c), { units: "meters" }),
-    }));
-    withDist.sort((p1, p2) => p1.dist - p2.dist);
-
-    // Lag delsegmenter og behold de som er inne i masken
     for (let j = 0; j < withDist.length - 1; j++) {
       const p1 = withDist[j].coord;
       const p2 = withDist[j + 1].coord;
-
-      if (p1[0] === p2[0] && p1[1] === p2[1]) continue;
-
       const mid = point([(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2]);
-      const inside = booleanPointInPolygon(mid, maskFeat);
 
-      if (inside) {
-        outSegments.push(
-          lineString([p1, p2], { ...(lineFeat.properties || {}) })
-        );
+      if (booleanPointInPolygon(mid, maskFeat)) {
+        outSegments.push(lineString([p1, p2], lineFeat.properties || {}));
       }
     }
   }
@@ -259,44 +223,27 @@ function clipLines(sourceFC, maskFC) {
   const maskPolys = getMaskPolygons(maskFC);
   const union = dissolveMask(maskPolys);
 
-  if (!union || !union.geometry) {
-    throw new Error(
-      "Maske-laget må ha polygon- eller multipolygon-geometri."
-    );
+  if (!union?.geometry) {
+    throw new Error("Maske-laget må ha polygon-geometri.");
   }
 
-  const maskFeat = {
-    type: "Feature",
-    properties: {},
-    geometry: union.geometry,
-  };
-
+  const maskFeat = { type: "Feature", properties: {}, geometry: union.geometry };
   const out = [];
 
   sourceFC.features.forEach((src) => {
     if (!src.geometry || !isLineLike(src.geometry.type)) return;
 
     if (src.geometry.type === "LineString") {
-      const lf = {
-        type: "Feature",
-        properties: { ...(src.properties || {}) },
-        geometry: src.geometry,
-      };
-      const segs = clipSingleLine(lf, maskFeat);
-      out.push(...segs);
-    } else if (src.geometry.type === "MultiLineString") {
+      out.push(...clipSingleLine(src, maskFeat));
+    } else {
       src.geometry.coordinates.forEach((coords) => {
-        const lf = lineString(coords, src.properties || {});
-        const segs = clipSingleLine(lf, maskFeat);
-        out.push(...segs);
+        out.push(...clipSingleLine(lineString(coords, src.properties), maskFeat));
       });
     }
   });
 
   if (!out.length) {
-    throw new Error(
-      "Ingen linjesegmenter ligger innenfor maskepolygonet. Ingen lag ble laget."
-    );
+    throw new Error("Ingen linjesegmenter ligger innenfor maskepolygonet.");
   }
 
   return featureCollection(out);
@@ -305,33 +252,15 @@ function clipLines(sourceFC, maskFC) {
 /* ----------------------- Hovedfunksjon ----------------------- */
 
 export function clipGeoJson(sourceLayer, maskLayer) {
-  if (!sourceLayer || !maskLayer) {
-    throw new Error("Mangler kilde- eller maske-lag.");
-  }
-
   const sourceFC = toFeatureCollection(sourceLayer);
   const maskFC = toFeatureCollection(maskLayer);
 
-  const firstGeom = sourceFC.features.find((f) => f.geometry)?.geometry;
-  if (!firstGeom) {
-    throw new Error("Kilde-laget har ingen geometri.");
-  }
+  const geom = sourceFC.features.find((f) => f.geometry)?.geometry;
+  if (!geom) throw new Error("Kilde-laget har ingen geometri.");
 
-  const t = firstGeom.type;
+  if (isPolygonLike(geom.type)) return clipPolygons(sourceFC, maskFC);
+  if (isPointLike(geom.type)) return clipPoints(sourceFC, maskFC);
+  if (isLineLike(geom.type)) return clipLines(sourceFC, maskFC);
 
-  if (isPolygonLike(t)) {
-    return clipPolygons(sourceFC, maskFC); // gammel, velfungerende polygon-logikk
-  }
-
-  if (isPointLike(t)) {
-    return clipPoints(sourceFC, maskFC); // nåværende, fungerende punkt-logikk
-  }
-
-  if (isLineLike(t)) {
-    return clipLines(sourceFC, maskFC); // nåværende, fungerende linje-logikk
-  }
-
-  throw new Error(
-    "Clip støtter foreløpig bare punkt-, linje- og polygonlag."
-  );
+  throw new Error("Clip støtter bare punkt, linje og polygon.");
 }

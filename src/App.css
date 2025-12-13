@@ -768,6 +768,11 @@
   color: #16a34a;
 }
 
+.tool-panel-status.is-error {
+  color: #b91c1c;
+}
+
+
 /* === Pen multiselect-liste for Clip (lag som skal klippes) === */
 
 .tool-multiselect-list {
@@ -1414,4 +1419,101 @@
 .tool-pill:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+/* =========================================================
+   Feature Extractor (rule builder)
+   ========================================================= */
+
+.fx-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.fx-rule-row {
+  display: grid;
+  grid-template-columns: 1.2fr 90px 1.4fr 28px;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.fx-rule-row select,
+.fx-rule-row input {
+  border-radius: 0.55rem;
+  padding: 0.28rem 0.45rem;
+  font-size: 0.78rem;
+}
+
+.fx-rule-row input.fx-value-disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
+.rule-remove-btn {
+  border: none;
+  background: transparent;
+  padding: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rule-remove-btn svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+}
+
+.rule-remove-btn:hover svg {
+  opacity: 0.9;
+}
+
+.fx-rule-footer {
+  margin-top: 0.45rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.fx-add-rule {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #111827;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  
+}
+
+.fx-add-rule:hover {
+  background: #f3f4f6;
+}
+
+.fx-combine {
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.fx-pill {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #111827;
+  border-radius: 999px;
+  padding: 0.22rem 0.65rem;
+  font-size: 0.7rem;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+}
+
+.fx-pill.active {
+  border-color: #16a34a;
+  box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.25);
 }
