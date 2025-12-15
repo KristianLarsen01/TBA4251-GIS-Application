@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useLayers } from "../../context/LayersContext.jsx";
 
 export default function LayersPanel({ onClose, highlight }) {
-  const { layers, updateLayer, removeLayer, moveLayer, toggleVisibility } = useLayers();
+  const { layers, updateLayer, removeLayer, moveLayer, toggleVisibility, editableLayerId, setEditableLayerId } = useLayers();
   const [localColors, setLocalColors] = useState({});
   const [localOpacity, setLocalOpacity] = useState({});
   const colorTimersRef = useRef({});
@@ -111,17 +111,6 @@ export default function LayersPanel({ onClose, highlight }) {
         )}
       </div>
 
-      <div className="layers-column-header">
-        <span className="layers-col-label layers-col-color">Farge</span>
-        <span className="layers-col-label layers-col-visible">Synlig</span>
-        <span className="layers-col-label layers-col-name">Navn</span>
-        <span className="layers-col-label layers-col-opacity">Gjennomsiktighet</span>
-        <span className="layers-col-label layers-col-actions">
-          Rekkef./slett
-        </span>
-      </div>
-
-
       <ul className="layers-list">
         {layers.map((layer, index) => {
           const colorValue =
@@ -216,6 +205,16 @@ export default function LayersPanel({ onClose, highlight }) {
                   disabled={index === layers.length - 1}
                 >
                   ↓
+                </button>
+                <button
+                  type="button"
+                  title={editableLayerId === layer.id ? "Avslutt redigering" : "Rediger lag (klikk polygon for å slette)"}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditableLayerId(editableLayerId === layer.id ? null : layer.id);
+                  }}
+                >
+                  {editableLayerId === layer.id ? "🔒" : "✏️"}
                 </button>
                 <button
                   onClick={() => removeLayer(layer.id)}

@@ -47,7 +47,7 @@ const BASEMAPS = [
     name: "Satellitt",
     label: "Satellitt",
     url: `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`,
-    maxZoom: 17,
+    maxZoom: 19,
   },
 ];
 
@@ -70,12 +70,41 @@ export default function MapContainer() {
   const createdLayerNamesRef = useRef(new Set());
   const basemapSwitcherRef = useRef(null);
 
-  const { layers, addLayer } = useLayers();
+  const { layers, addLayer, editableLayerId, removeFeatures } = useLayers();
   const { activeTool, sessionId, stopDrawing } = useDrawing();
 
   // Nytt: aktivt bakgrunnskart + om menyen er åpen
   const [activeBasemapId, setActiveBasemapId] = useState(BASEMAPS[0].id);
   const [basemapMenuOpen, setBasemapMenuOpen] = useState(false);
+
+  // 🆕 Multi-select sletting i aktivt edit-lag
+  const [selectedFeatureIds, setSelectedFeatureIds] = useState([]); // array av ids
+
+  useEffect(() => {
+    setSelectedFeatureIds([]);
+  }, [editableLayerId]);
+
+  useEffect(() => {
+  const shouldHandle =
+    editableLayerId && !activeToolRef.current && !activeTool && selectedFeatureIds.length > 0;
+
+  if (!shouldHandle) return;
+
+  const onKeyDown = (e) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      setSelectedFeatureIds([]);
+    }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      removeFeatures(editableLayerId, selectedFeatureIds);
+      setSelectedFeatureIds([]);
+    }
+  };
+
+  window.addEventListener("keydown", onKeyDown);
+  return () => window.removeEventListener("keydown", onKeyDown);
+}, [editableLayerId, activeTool, selectedFeatureIds, removeFeatures]);
 
   /* -------------------------------------------------------
      Init kart (uten bakgrunnskart – det styres i egen effekt)
@@ -169,6 +198,10 @@ export default function MapContainer() {
             const isPolygonGeom = geomType.includes("Polygon");
             const isLineGeom = geomType.includes("LineString");
 
+            const fid = feature?.properties?.id ?? feature?.properties?.__fid;
+            const isSelected = selectedFeatureIds.includes(fid);
+            const isEditable = editableLayerId === layer.id && !activeToolRef.current;
+
             const defaultFill = isBuffer ? 0.3 : 1.0;
             const fillOpacity =
               typeof layer.fillOpacity === "number"
@@ -178,7 +211,7 @@ export default function MapContainer() {
             if (isPolygonGeom) {
               return {
                 color,
-                weight: isBuffer ? 1.5 : 1.2,
+                weight: isSelected ? 4 : isEditable ? 2.2 : isBuffer ? 1.5 : 1.2,
                 fillColor: color,
                 fillOpacity,
               };
@@ -187,7 +220,7 @@ export default function MapContainer() {
             if (isLineGeom) {
               return {
                 color,
-                weight: 3,
+                weight: isSelected ? 6 : 3,
                 fillOpacity: 0,
               };
             }
@@ -205,19 +238,42 @@ export default function MapContainer() {
                 ? layer.fillOpacity
                 : defaultFill;
 
+            const fid = feature?.properties?.id ?? feature?.properties?.__fid;
+            const isSelected = selectedFeatureIds.includes(fid);
+            const isEditable = editableLayerId === layer.id && !activeToolRef.current;
+
             return L.circleMarker(latlng, {
-              radius: isBuffer ? 7 : 6,
+              radius: isSelected ? 9 : isBuffer ? 7 : 6,
               color,
               fillColor: color,
-              weight: 1.5,
+              weight: isSelected ? 3 : isEditable ? 2.2 : 1.5,
               fillOpacity,
             });
           },
+
+          onEachFeature: (feature, leafletLayer) => {
+            const isEditable = editableLayerId === layer.id && !activeToolRef.current;
+            if (!isEditable) return;
+
+            leafletLayer.on("click", () => {
+              const fid = feature?.properties?.id ?? feature?.properties?.__fid;
+              if (!fid) return;
+
+              setSelectedFeatureIds((prev) =>
+                prev.includes(fid) ? prev.filter((x) => x !== fid) : [...prev, fid]
+              );
+            });
+          },
+
         });
 
+        // ✅ VIKTIG: addTo må være her inne
         geoJsonLayer.addTo(group);
       });
-  }, [layers]);
+    }, [layers, editableLayerId, selectedFeatureIds, removeFeatures]);
+
+
+
 
   /* -------------------------------------------------------
      Tegneverktøy – lytte på klikk/dobbelklikk/tastatur
@@ -363,6 +419,15 @@ export default function MapContainer() {
       }).addTo(verticesLayerRef.current)
     );
 
+    // ✅ Punkt-verktøy: IKKE tegn linje/polygon mellom punktene   
+    if (tool === "point") {
+      if (sketchLayerRef.current) {
+        sketchLayerRef.current.remove();
+        sketchLayerRef.current = null;
+      }
+      return;
+    }
+
     const baseStyle = {
       color: "#f59e0b",
       weight: 2,
@@ -491,6 +556,47 @@ export default function MapContainer() {
         ref={mapElRef}
         className={`leaflet-map-root ${activeTool ? "drawing-cursor" : ""}`}
       />
+
+      {/* 🆕 Edit-slett HUD (app-stil) */}
+      {editableLayerId && selectedFeatureIds.length > 0 && !activeTool && (
+        <div className="draw-hud" onClick={(e) => e.stopPropagation()}>
+          <div className="draw-hud-header">
+            <div className="draw-hud-title">
+              <span role="img" aria-hidden>🗑️</span>
+              <span>{`Valgt: ${selectedFeatureIds.length}`}</span>
+            </div>
+
+            <div className="draw-hud-actions">
+              <button
+                type="button"
+                className="draw-hud-icon-button confirm"
+                onClick={() => {
+                  removeFeatures(editableLayerId, selectedFeatureIds);
+                  setSelectedFeatureIds([]);
+                }}
+                title="Slett valgte (Enter)"
+                aria-label="Slett valgte"
+              >
+                ✓
+              </button>
+
+              <button
+                type="button"
+                className="draw-hud-icon-button cancel"
+                onClick={() => setSelectedFeatureIds([])}
+                title="Tøm markering (Esc)"
+                aria-label="Tøm markering"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          <div className="draw-hud-body">
+            Klikk for å velge/flere. Enter sletter. Esc avbryter.
+          </div>
+        </div>
+      )}
 
       {/* Tegne-HUD */}
       {activeTool && (
