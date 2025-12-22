@@ -260,6 +260,7 @@ export default function App() {
               <LayersPanel
                 onClose={() => setLayersOpen(false)}
                 highlight={highlightLayers}
+                tourStep={tourStep} 
               />
             </div>
           </div>

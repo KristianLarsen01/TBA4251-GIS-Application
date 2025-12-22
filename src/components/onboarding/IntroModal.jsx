@@ -12,16 +12,18 @@ export default function IntroModal({ step, onNext, onSkip }) {
       <div className="tour-modal" onClick={(e) => e.stopPropagation()}>
         <h2 className="tour-title">
           {isWelcome
-            ? "Velkommen til fotballbane-analysen"
+            ? "Velkommen til FootyGIS!"
             : "Slik er GIS-applikasjonen bygget opp"}
         </h2>
 
         {isWelcome ? (
           <>
             <p>
-              Du skal nå bruke et lite GIS-program for å finne den
-              fotballbanen i Trondheim som er lettest å nå for en
-              vennegjeng på ti personer.
+              Du har nettopp kommet inn på drømmestudiet ved NTNU og skal finne en leilighet til leie.
+              På Finn.no fant du 100 leiligheter som skal leies ut,
+              og du er ekstra interessert i 10 av dem. 
+              Din store interesse for å spille fotball 
+              gjør at du ønsker å finne den beste beliggenheten i forhold til fotballbaner.
             </p>
             <p>
               Underveis går du gjennom en kort veileder med oppgaver,
@@ -45,11 +47,10 @@ export default function IntroModal({ step, onNext, onSkip }) {
               </li>
               <li>
                 <strong>Verktøylinja</strong> til venstre har knapper
-                for buffer, intersect, clip, union og difference.
+                for å tegne i kartet, laste opp data og utføre analyser.
               </li>
               <li>
-                <strong>Lagpanelet</strong> lar deg slå lag av/på, endre
-                navn og rekkefølge.
+                <strong>Lagpanelet</strong> lar deg endre innstillinger og redigere de forskjellige lagene.
               </li>
               <li>
                 <strong>Oppgavepanelet</strong> til høyre guider deg

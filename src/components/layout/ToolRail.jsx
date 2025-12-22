@@ -77,7 +77,7 @@ export default function ToolRail({
             activeTool === "line" ? "tool-rail-button-active" : ""
           }`}
           onClick={() => handleClick("draw-line")}
-          title="Linje – klikk flere ganger i kartet, avslutt med dobbeltklikk eller Enter."
+          title="Linje – klikk flere ganger i kartet, avslutt med Enter."
           aria-pressed={activeTool === "line"}
         >
           <span className="tool-rail-icon">〰️</span>
@@ -91,7 +91,7 @@ export default function ToolRail({
             activeTool === "polygon" ? "tool-rail-button-active" : ""
           }`}
           onClick={() => handleClick("draw-polygon")}
-          title="Polygon – klikk flere ganger i kartet, avslutt med dobbeltklikk eller Enter."
+          title="Polygon – klikk flere ganger i kartet, avslutt med Enter."
           aria-pressed={activeTool === "polygon"}
         >
           <span className="tool-rail-icon">▲</span>

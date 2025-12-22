@@ -1,84 +1,133 @@
 // src/components/layout/LayersPanel.jsx
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useLayers } from "../../context/LayersContext.jsx";
 
-export default function LayersPanel({ onClose, highlight }) {
-  const { layers, updateLayer, removeLayer, moveLayer, toggleVisibility, editableLayerId, setEditableLayerId } = useLayers();
+const TOUR_DEMO_LAYERS = [
+  {
+    id: "__tour_demo_layer_1__",
+    name: "Demolag 1",
+    color: "#22c55e", // grønn
+    fillOpacity: 0.7,
+    visible: true,
+    __isTourDemo: true,
+  },
+  {
+    id: "__tour_demo_layer_2__",
+    name: "Demolag 2",
+    color: "#3b82f6", // blå
+    fillOpacity: 0.55,
+    visible: false, // skjult for å vise ikon
+    __isTourDemo: true,
+  },
+  {
+    id: "__tour_demo_layer_3__",
+    name: "Demolag 3",
+    color: "#f59e0b", // gul/oransje
+    fillOpacity: 0.85,
+    visible: true,
+    __isTourDemo: true,
+  },
+];
+
+export default function LayersPanel({ onClose, highlight, tourStep }) {
+  const {
+    layers,
+    updateLayer,
+    removeLayer,
+    moveLayer,
+    toggleVisibility,
+    editableLayerId,
+    setEditableLayerId,
+  } = useLayers();
+
+  const showTourDemoLayer = tourStep === 4;
+
+  const displayLayers = useMemo(() => {
+    if (showTourDemoLayer) return [...TOUR_DEMO_LAYERS, ...(layers || [])];
+    return layers || [];
+  }, [showTourDemoLayer, layers]);
+
   const [localColors, setLocalColors] = useState({});
   const [localOpacity, setLocalOpacity] = useState({});
+  const [localNames, setLocalNames] = useState({});
   const colorTimersRef = useRef({});
   const opacityTimersRef = useRef({});
-  const [localNames, setLocalNames] = useState({});
 
+  // Demo "edit" state (kun UI)
+  const [demoEditableId, setDemoEditableId] = useState(null);
 
-  // Sync lokale verdier når layers endres
   useEffect(() => {
-  setLocalColors((prev) => {
-    const next = {};
-    layers.forEach((l) => {
-      next[l.id] = prev[l.id] ?? l.color ?? "#3388ff";
+    setLocalColors((prev) => {
+      const next = {};
+      displayLayers.forEach((l) => {
+        next[l.id] = prev[l.id] ?? l.color ?? "#3388ff";
+      });
+      return next;
     });
-    return next;
-  });
 
-  setLocalOpacity((prev) => {
-    const next = {};
-    layers.forEach((l) => {
-      const fromLayer =
-        typeof l.fillOpacity === "number" ? l.fillOpacity : 0.7;
-      const prevVal = prev[l.id];
-      next[l.id] =
-        typeof prevVal === "number" ? prevVal : fromLayer;
+    setLocalOpacity((prev) => {
+      const next = {};
+      displayLayers.forEach((l) => {
+        const fromLayer =
+          typeof l.fillOpacity === "number" ? l.fillOpacity : 0.7;
+        const prevVal = prev[l.id];
+        next[l.id] = typeof prevVal === "number" ? prevVal : fromLayer;
+      });
+      return next;
     });
-    return next;
-  });
 
-  // 🆕 sync navn
-  setLocalNames((prev) => {
-    const next = {};
-    layers.forEach((l) => {
-      next[l.id] = prev[l.id] ?? l.name ?? "";
+    setLocalNames((prev) => {
+      const next = {};
+      displayLayers.forEach((l) => {
+        next[l.id] = prev[l.id] ?? l.name ?? "";
+      });
+      return next;
     });
-    return next;
-  });
-}, [layers]);
+  }, [displayLayers]);
 
+  // ✅ Når vi går inn i step 4: sett demo-lag 1 som "redigeres" (viser 🔒)
+  // Når vi går ut: nullstill
+  useEffect(() => {
+    if (showTourDemoLayer) {
+      setDemoEditableId("__tour_demo_layer_1__");
+    } else {
+      setDemoEditableId(null);
+    }
+  }, [showTourDemoLayer]);
 
-  const handleColorChange = (layerId, value) => {
+  const handleColorChange = (layerId, value, isDemo) => {
     setLocalColors((prev) => ({ ...prev, [layerId]: value }));
+    if (isDemo) return;
 
     if (colorTimersRef.current[layerId]) {
       clearTimeout(colorTimersRef.current[layerId]);
     }
-
     colorTimersRef.current[layerId] = setTimeout(() => {
       updateLayer(layerId, { color: value });
     }, 120);
   };
 
-  const handleOpacityChange = (layerId, value) => {
+  const handleOpacityChange = (layerId, value, isDemo) => {
     const pct = Number(value);
     const clamped = Math.min(100, Math.max(0, pct));
     const normalized = clamped / 100;
 
     setLocalOpacity((prev) => ({ ...prev, [layerId]: normalized }));
+    if (isDemo) return;
 
     if (opacityTimersRef.current[layerId]) {
       clearTimeout(opacityTimersRef.current[layerId]);
     }
-
     opacityTimersRef.current[layerId] = setTimeout(() => {
       updateLayer(layerId, { fillOpacity: normalized });
     }, 120);
   };
 
-  // Tomt panel
-  if (!layers.length) {
+  // Tomt panel (bruk displayLayers)
+  if (!displayLayers.length) {
     return (
       <div
-        className={`layers-panel ${
-          highlight ? "tour-highlight-layers" : ""
-        }`}
+        className={`layers-panel ${highlight ? "tour-highlight-layers" : ""}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="layers-header">
@@ -96,14 +145,11 @@ export default function LayersPanel({ onClose, highlight }) {
 
   return (
     <div
-      className={`layers-panel ${
-        highlight ? "tour-highlight-layers" : ""
-      }`}
+      className={`layers-panel ${highlight ? "tour-highlight-layers" : ""}`}
       onClick={(e) => e.stopPropagation()}
     >
       <div className="layers-header">
         <h3>Lag</h3>
-
         {onClose && (
           <button className="layers-close-btn" onClick={onClose}>
             ×
@@ -112,14 +158,24 @@ export default function LayersPanel({ onClose, highlight }) {
       </div>
 
       <ul className="layers-list">
-        {layers.map((layer, index) => {
+        {displayLayers.map((layer, index) => {
+          const isDemo = layer.__isTourDemo === true;
+
+          const isTop = index === 0;
+          const isBottom = index === displayLayers.length - 1;
+
+          // ✅ disable-regler gjelder for ALLE lag (inkl demo)
+          const upDisabled = isTop;
+          const downDisabled = isBottom;
+
+          const isDemoEditing = isDemo && demoEditableId === layer.id;
+          const isRealEditing = !isDemo && editableLayerId === layer.id;
+          const isEditing = isDemo ? isDemoEditing : isRealEditing;
+
           const colorValue =
             localColors[layer.id] ?? layer.color ?? "#3388ff";
           const opacityValue = Math.round(
-            100 *
-              (localOpacity[layer.id] ??
-                layer.fillOpacity ??
-                0.7)
+            100 * (localOpacity[layer.id] ?? layer.fillOpacity ?? 0.7)
           );
 
           return (
@@ -130,7 +186,7 @@ export default function LayersPanel({ onClose, highlight }) {
                 className="layers-color-input"
                 value={colorValue}
                 onChange={(e) =>
-                  handleColorChange(layer.id, e.target.value)
+                  handleColorChange(layer.id, e.target.value, isDemo)
                 }
               />
 
@@ -141,26 +197,36 @@ export default function LayersPanel({ onClose, highlight }) {
                   layer.visible === false ? "hidden" : ""
                 }`}
                 onClick={(e) => {
-                  e.stopPropagation(); 
+                  e.stopPropagation();
+                  if (isDemo) return; // demo: no-op
                   toggleVisibility(layer.id);
                 }}
                 title={layer.visible === false ? "Vis lag" : "Skjul lag"}
               >
                 {layer.visible === false ? (
-                  // SKJULT (ingen creepy øye)
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="#888" strokeWidth="2" />
-                    <path d="M4 20L20 4" stroke="#888" strokeWidth="2" strokeLinecap="round" />
+                    <path
+                      d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"
+                      stroke="#888"
+                      strokeWidth="2"
+                    />
+                    <path
+                      d="M4 20L20 4"
+                      stroke="#888"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 ) : (
-                  // SYNLIG
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="#444" strokeWidth="2" />
+                    <path
+                      d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"
+                      stroke="#444"
+                      strokeWidth="2"
+                    />
                   </svg>
                 )}
               </button>
-
-
 
               {/* Navn */}
               <input
@@ -172,9 +238,10 @@ export default function LayersPanel({ onClose, highlight }) {
                     [layer.id]: e.target.value,
                   }))
                 }
-                onBlur={(e) =>
-                  updateLayer(layer.id, { name: e.target.value })
-                }
+                onBlur={(e) => {
+                  if (isDemo) return;
+                  updateLayer(layer.id, { name: e.target.value });
+                }}
               />
 
               {/* Opacity */}
@@ -185,7 +252,7 @@ export default function LayersPanel({ onClose, highlight }) {
                   max="100"
                   value={opacityValue}
                   onChange={(e) =>
-                    handleOpacityChange(layer.id, e.target.value)
+                    handleOpacityChange(layer.id, e.target.value, isDemo)
                   }
                   className="layers-opacity-input"
                 />
@@ -194,30 +261,62 @@ export default function LayersPanel({ onClose, highlight }) {
 
               {/* Knappene */}
               <div className="layers-row-buttons">
+                {/* ✅ ALLTID vis begge piler for linjering */}
                 <button
-                  onClick={() => moveLayer(layer.id, "up")}
-                  disabled={index === 0}
+                  onClick={() => {
+                    if (upDisabled) return;
+                    if (isDemo) return;
+                    moveLayer(layer.id, "up");
+                  }}
+                  disabled={upDisabled}
+                  title="Flytt opp"
                 >
                   ↑
                 </button>
+
                 <button
-                  onClick={() => moveLayer(layer.id, "down")}
-                  disabled={index === layers.length - 1}
+                  onClick={() => {
+                    if (downDisabled) return;
+                    if (isDemo) return;
+                    moveLayer(layer.id, "down");
+                  }}
+                  disabled={downDisabled}
+                  title="Flytt ned"
                 >
                   ↓
                 </button>
+
+                {/* Rediger: demo toggle lokalt, ekte bruker context */}
                 <button
                   type="button"
-                  title={editableLayerId === layer.id ? "Avslutt redigering" : "Rediger lag (klikk polygon for å slette)"}
+                  title={
+                    isEditing
+                      ? "Avslutt redigering"
+                      : "Rediger lag (klikk polygon for å slette)"
+                  }
                   onClick={(e) => {
                     e.stopPropagation();
-                    setEditableLayerId(editableLayerId === layer.id ? null : layer.id);
+
+                    if (isDemo) {
+                      setDemoEditableId((prev) =>
+                        prev === layer.id ? null : layer.id
+                      );
+                      return;
+                    }
+
+                    setEditableLayerId(
+                      editableLayerId === layer.id ? null : layer.id
+                    );
                   }}
                 >
-                  {editableLayerId === layer.id ? "🔒" : "✏️"}
+                  {isEditing ? "🔒" : "✏️"}
                 </button>
+
                 <button
-                  onClick={() => removeLayer(layer.id)}
+                  onClick={() => {
+                    if (isDemo) return;
+                    removeLayer(layer.id);
+                  }}
                   title="Fjern lag"
                 >
                   🗑

@@ -19,8 +19,10 @@ export default function TourOverlay({ step, onNext, onSkip }) {
       title = "Verktøylinja";
       body = [
         "Til venstre har du verktøylinja.",
-        "Her finner du blant annet Buffer, Intersect, Clip, Union og Difference.",
+        "Her finner du tre tegneverktøy samt verktøy for å laste opp data og utføre analyser.",
         "Disse verktøyene bruker du gjennom oppgavene når analysen skal gjennomføres.",
+        "Nederst har du en knapp for å starte omvisningen på nytt når som helst.",
+
       ];
       break;
     case 4:
@@ -28,9 +30,13 @@ export default function TourOverlay({ step, onNext, onSkip }) {
       body = [
         "Øverst til høyre finner du Lag-panelet.",
         "Her kan du:",
+        "• endre farge",
         "• slå lag av og på",
-        "• gi lagene mer forståelige navn",
+        "• gi lagene nye navn",
+        "• endre gjennomsiktighet",
         "• flytte lag opp og ned for å endre rekkefølge i kartet.",
+        "• redigere lagene (f.eks. slette noen polygoner i et polygonlag).",
+        "• slette laget helt.",
       ];
       break;
     case 5:
@@ -47,8 +53,7 @@ export default function TourOverlay({ step, onNext, onSkip }) {
         "Nå har du sett hvor de viktigste delene av applikasjonen ligger.",
         "Videre følger du oppgavene i veilederen for å gjennomføre analysen.",
         "",
-        "Hvis du vil se denne omvisningen på nytt senere, kan du trykke på",
-        "knappen «Omvisning» nederst i verktøylinja.",
+        "Hvis du vil se denne omvisningen på nytt senere, kan du trykke på knappen «Omvisning» nederst i verktøylinja.",
       ];
       break;
     default:

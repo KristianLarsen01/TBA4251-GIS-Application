@@ -664,7 +664,7 @@ export default function MapContainer() {
             activeTool !== "point" && (
               <div className="draw-hud-steps">
                 <span>{`Punkter lagt til: ${drawingPoints.length}`}</span>
-                <span>Dobbeltklikk eller Enter for å lagre laget.</span>
+                <span>Enter for å lagre laget.</span>
               </div>
             )}
         </div>
