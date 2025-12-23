@@ -143,7 +143,7 @@ export default function DissolvePanel({ onClose }) {
                 ))}
               </select>
               <p className="tool-panel-hint">
-                Kun polygonlag vises her. Nyeste foreslås automatisk.
+                Kun polygonlag vises her.
               </p>
             </div>
 

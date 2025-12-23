@@ -120,9 +120,6 @@ export default function BufferPanel({ onClose }) {
                   </option>
                 ))}
               </select>
-              <p className="tool-panel-hint">
-                Standardvalg er det nyeste laget (siste i listen).
-              </p>
             </div>
 
             <div className="buffer-field buffer-field-inline">

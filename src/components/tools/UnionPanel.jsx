@@ -112,7 +112,7 @@ export default function UnionPanel({ onClose }) {
                   <option key={layer.id} value={layer.id}>{layer.name}</option>
                 ))}
               </select>
-              <p className="tool-panel-hint">Kun polygonlag vises her. To nyeste foreslås automatisk.</p>
+              <p className="tool-panel-hint">Kun polygonlag vises her.</p>
             </div>
 
             <div className="tool-field">

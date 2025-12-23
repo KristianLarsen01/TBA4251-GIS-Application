@@ -213,8 +213,7 @@ export default function ClipPanel({ onClose }) {
                   </select>
 
                   <p className="tool-panel-hint">
-                    Kun polygonlag vises her. Standardvalg er første polygonlag i
-                    listen.
+                    Kun polygonlag vises her.
                   </p>
                 </>
               )}
