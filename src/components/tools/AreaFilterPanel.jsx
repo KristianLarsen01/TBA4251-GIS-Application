@@ -121,8 +121,6 @@ export default function AreaFilterPanel({ onClose }) {
           <p className="tool-panel-description">
             Filtrer polygoner basert på areal innenfor et intervall (min–max).
             Resultatet får property <code>area_m2</code>.
-            <br />
-            <em>Merk: MultiPolygon splittes til egne polygoner før filtrering.</em>
           </p>
 
           <form className="tool-panel-form" onSubmit={handleSubmit}>
@@ -140,7 +138,7 @@ export default function AreaFilterPanel({ onClose }) {
                 ))}
               </select>
               <p className="tool-panel-hint">
-                Kun polygonlag vises her. Nyeste foreslås automatisk.
+                Kun polygonlag vises her.
               </p>
             </div>
 

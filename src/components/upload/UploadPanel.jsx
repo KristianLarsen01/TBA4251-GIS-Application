@@ -93,19 +93,17 @@ export default function UploadPanel({ onClose }) {
     <div className="upload-panel" onClick={(e) => e.stopPropagation()}>
       <div className="upload-panel-header">
         <h3>Last opp GeoJSON</h3>
-        <button className="tool-message-close" onClick={onClose}>
-          ×
-        </button>
+        <button className="tool-panel-close-btn" onClick={onClose}>×</button>
       </div>
 
       <p className="upload-panel-text">
-        Velg ett eller flere GeoJSON-filer (for eksempel{" "}
+        Velg en eller flere GeoJSON-filer (for eksempel{" "}
         <strong>Leiligheter_finn.geojson</strong>,{" "}
-        <strong>Arealbruk.geojson</strong>,{" "}
+        <strong>Arealbruk.geojson</strong>){" "}
       </p>
 
       <label className="upload-dropzone">
-        <span>Klikk her for å velge filer.</span>
+        <span>Klikk her for å velge fil(er)</span>
         <input
           type="file"
           accept=".geojson"

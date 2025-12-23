@@ -47,7 +47,7 @@ export default function ToolRail({
         <button
           className="tool-rail-button tool-rail-button-main"
           onClick={() => handleClick("upload")}
-          title="Last opp – legg til ett eller flere GeoJSON-lag i kartet."
+          title="Last opp – legg til en eller flere GeoJSON-lag i kartet."
         >
           <span className="tool-rail-icon">⬆️</span>
           <span className="tool-rail-label">
@@ -162,7 +162,7 @@ export default function ToolRail({
         <button
           className="tool-rail-button"
           onClick={() => handleClick("featureExtractor")}
-          title="Feature Extractor – hent ut egenskaper og lag statistikk for valgte lag."
+          title="Feature Extractor – hent ut egenskaper av lag."
         >
           <span className="tool-rail-icon">🔍</span>
           <span className="tool-rail-label">
@@ -185,7 +185,7 @@ export default function ToolRail({
         <button
           className="tool-rail-button"
           onClick={() => handleClick("union")}
-          title="Union – slår sammen to eller flere polygonlag til ett."
+          title="Union – slår sammen to polygonlag til ett."
         >
           <span className="tool-rail-icon">U</span>
           <span className="tool-rail-label">

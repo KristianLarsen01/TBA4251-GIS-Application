@@ -1,17 +1,15 @@
 // src/components/tools/ClipPanel.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLayers } from "../../context/LayersContext.jsx";
 import { clipGeoJson } from "../../utils/clip.js";
 
 export default function ClipPanel({ onClose }) {
   const { layers, addLayer } = useLayers();
-  const [sourceIds, setSourceIds] = useState([]);  // flere kildelag
-  const [maskId, setMaskId] = useState("");        // ett maske-lag (polygon)
+  const [sourceIds, setSourceIds] = useState([]); // flere kildelag
+  const [maskId, setMaskId] = useState(""); // ett maske-lag (polygon)
   const [status, setStatus] = useState("");
 
   const hasMultipleLayers = Array.isArray(layers) && layers.length >= 2;
-
-  /* ---------- Velge/avvelge kildelag ---------- */
 
   const toggleSourceId = (id) => {
     setSourceIds((prev) =>
@@ -19,38 +17,33 @@ export default function ClipPanel({ onClose }) {
     );
   };
 
-  /* ---------- Finn alle polygonlag ---------- */
+  // ✅ Finn alle polygonlag (avledet)
+  const polygonLayers = useMemo(() => {
+    return (layers || []).filter((layer) => {
+      const data = layer?.data;
+      if (!data || !Array.isArray(data.features)) return false;
 
-  const polygonLayers = layers.filter((layer) => {
-    const data = layer?.data;
-    if (!data || !Array.isArray(data.features)) return false;
+      const featWithGeom = data.features.find((f) => f && f.geometry);
+      if (!featWithGeom?.geometry) return false;
 
-    const featWithGeom = data.features.find((f) => f && f.geometry);
-    if (!featWithGeom || !featWithGeom.geometry) return false;
+      const t = featWithGeom.geometry.type;
+      return t === "Polygon" || t === "MultiPolygon";
+    });
+  }, [layers]);
 
-    const t = featWithGeom.geometry.type;
-    return t === "Polygon" || t === "MultiPolygon";
-  });
-
-  /* ---------- Velg nyeste polygonlag automatisk ---------- */
-
+  // ✅ Default maske = FØRSTE polygonlag (typisk Analysepolygon)
   useEffect(() => {
     if (!polygonLayers.length) {
-      // Ingen polygonlag lenger → nullstill maskId
       if (maskId) setMaskId("");
       return;
     }
 
     const stillValid = polygonLayers.some((l) => l.id === maskId);
-    if (!stillValid) {
-      // Velg siste (nyeste) polygonlag som default
-      const lastPolygon = polygonLayers[polygonLayers.length - 1];
-      setMaskId(lastPolygon.id);
+    if (!maskId || !stillValid) {
+      const firstPolygon = polygonLayers[0];
+      setMaskId(firstPolygon.id);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layers]); // polygonLayers er avledet av layers
-
-  /* ---------- Submit: klipp ett eller flere lag mot valgt maske ---------- */
+  }, [polygonLayers, maskId]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -72,7 +65,7 @@ export default function ClipPanel({ onClose }) {
     }
 
     if (!maskId) {
-      setStatus("Fant ikke maske-laget.");
+      setStatus("Velg et maske-lag.");
       return;
     }
 
@@ -140,8 +133,6 @@ export default function ClipPanel({ onClose }) {
     }
   };
 
-  /* ---------- Render ---------- */
-
   return (
     <div className="tool-panel" onClick={(e) => e.stopPropagation()}>
       <div className="tool-panel-header">
@@ -165,13 +156,11 @@ export default function ClipPanel({ onClose }) {
       ) : (
         <>
           <p className="tool-panel-description">
-            Velg ett eller flere lag som skal klippes, og et maske-lag
-            (typisk et polygonlag). Resultatet blir nye lag med geometri
-            som er begrenset til masken.
+            Velg ett eller flere lag som skal klippes, og et maske-polygonlag. Resultatet blir nye lag med geometri som er begrenset
+            til masken.
           </p>
 
           <form className="tool-panel-form" onSubmit={handleSubmit}>
-            {/* Kilde-lag (en eller flere) */}
             <div className="tool-field">
               <label>Lag som skal klippes (du kan velge flere)</label>
 
@@ -201,7 +190,6 @@ export default function ClipPanel({ onClose }) {
               </p>
             </div>
 
-            {/* Maske-lag: kun polygonlag, nyeste valgt automatisk */}
             <div className="tool-field">
               <label htmlFor="clip-mask">Maske-lag (klippepolygon)</label>
 
@@ -223,9 +211,10 @@ export default function ClipPanel({ onClose }) {
                       </option>
                     ))}
                   </select>
+
                   <p className="tool-panel-hint">
-                    Kun polygonlag vises her. Nyeste polygonlag velges
-                    automatisk, men du kan endre det.
+                    Kun polygonlag vises her. Standardvalg er første polygonlag i
+                    listen.
                   </p>
                 </>
               )}

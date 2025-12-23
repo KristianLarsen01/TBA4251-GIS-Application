@@ -129,7 +129,7 @@ export default function UnionPanel({ onClose }) {
               <p className="tool-panel-hint">Må være forskjellig fra Lag A.</p>
             </div>
 
-            <button type="submit" className="tool-panel-submit">Kjør union</button>
+            <button type="submit" className="tool-panel-submit">Utfør union</button>
           </form>
         </>
       )}

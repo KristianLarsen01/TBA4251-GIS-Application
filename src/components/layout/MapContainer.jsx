@@ -542,9 +542,9 @@ export default function MapContainer() {
   const helperText = {
     point:
       "Klikk i kartet for å plassere punkter. Alle punkter i denne sesjonen havner i samme lag.",
-    line: "Klikk for å legge til punkter. Dobbeltklikk eller Enter for å fullføre linjen.",
+    line: "Klikk for å legge til punkter i linjen. Trykk Enter for å fullføre linjen.",
     polygon:
-      "Klikk for å tegne polygon. Klikk på startpunktet, dobbeltklikk eller Enter for å lukke.",
+      "Klikk for å legge til punkter i polygonet. Klikk på startpunktet, trykk Enter for å avslutte polygonet.",
   };
 
   const activeBasemap =
@@ -558,7 +558,7 @@ export default function MapContainer() {
       />
 
       {/* 🆕 Edit-slett HUD (app-stil) */}
-      {editableLayerId && selectedFeatureIds.length > 0 && !activeTool && (
+      {editableLayerId && !activeTool && (
         <div className="draw-hud" onClick={(e) => e.stopPropagation()}>
           <div className="draw-hud-header">
             <div className="draw-hud-title">

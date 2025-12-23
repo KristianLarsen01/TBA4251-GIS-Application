@@ -200,7 +200,7 @@ export default function DissolvePanel({ onClose }) {
             )}
 
             <button type="submit" className="tool-panel-submit">
-              Kjør dissolve
+              Utfør dissolve
             </button>
           </form>
         </>

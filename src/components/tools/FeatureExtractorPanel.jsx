@@ -275,7 +275,7 @@ export default function FeatureExtractorPanel({ onClose }) {
             </div>
 
             <button type="submit" className="tool-panel-submit" title="Kjør filtreringen og lag nytt lag.">
-              Kjør filter
+              Utfør filter
             </button>
           </form>
         </>

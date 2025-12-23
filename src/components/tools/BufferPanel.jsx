@@ -1,15 +1,37 @@
 // src/components/tools/BufferPanel.jsx
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLayers } from "../../context/LayersContext.jsx";
 import { createBufferedGeoJson } from "../../utils/buffer.js";
 
 export default function BufferPanel({ onClose }) {
   const { layers, addLayer } = useLayers();
+
+  const hasLayers = Array.isArray(layers) && layers.length > 0;
+
+  // ✅ Default: foreslå siste (nyeste) lag
+  const defaultLayerId = useMemo(() => {
+    if (!hasLayers) return "";
+    return layers[layers.length - 1]?.id ?? "";
+  }, [hasLayers, layers]);
+
   const [selectedLayerId, setSelectedLayerId] = useState("");
   const [distanceMeters, setDistanceMeters] = useState(100);
   const [status, setStatus] = useState("");
 
-  const hasLayers = Array.isArray(layers) && layers.length > 0;
+  // ✅ Når panelet åpnes eller layers endrer seg:
+  // - Hvis ingen valgt, velg siste lag
+  // - Hvis valgt lag ikke finnes lenger, velg siste lag
+  useEffect(() => {
+    if (!hasLayers) {
+      if (selectedLayerId) setSelectedLayerId("");
+      return;
+    }
+
+    const stillValid = layers.some((l) => l.id === selectedLayerId);
+    if (!selectedLayerId || !stillValid) {
+      setSelectedLayerId(defaultLayerId);
+    }
+  }, [hasLayers, layers, defaultLayerId, selectedLayerId]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -21,7 +43,6 @@ export default function BufferPanel({ onClose }) {
     }
 
     const distance = Number(distanceMeters);
-
     if (!selectedLayerId) {
       setStatus("Velg et lag å buffre.");
       return;
@@ -40,7 +61,6 @@ export default function BufferPanel({ onClose }) {
 
     try {
       const bufferedData = createBufferedGeoJson(sourceLayer.data, distance);
-
       const newLayerName = `${sourceLayer.name}_buffer_${distance}m`;
 
       addLayer({
@@ -52,7 +72,7 @@ export default function BufferPanel({ onClose }) {
       });
 
       setStatus(
-        `Buffer-lag er opprettet som «${newLayerName}». Du kan styre synligheten i lagpanelet.`
+        `Buffer-lag er opprettet som «${newLayerName}». Du kan styre synligheten i Lag-panelet.`
       );
     } catch (err) {
       console.error(err);
@@ -76,7 +96,7 @@ export default function BufferPanel({ onClose }) {
             Buffer krever minst ett lag i kartet.
           </p>
           <p className="tool-panel-hint">
-            Du har ingen lag. Last opp ett eller flere GeoJSON-lag for å bruke det.
+            Last opp ett eller flere GeoJSON-lag for å bruke buffer.
           </p>
         </div>
       ) : (
@@ -87,43 +107,45 @@ export default function BufferPanel({ onClose }) {
           </p>
 
           <form className="buffer-form" onSubmit={handleSubmit}>
-          <div className="buffer-field">
-            <label htmlFor="buffer-layer">Lag som skal buffres</label>
-            <select
-              id="buffer-layer"
-              value={selectedLayerId}
-              onChange={(e) => setSelectedLayerId(e.target.value)}
-            >
-              <option value="">– Velg lag –</option>
-              {layers.map((layer) => (
-                <option key={layer.id} value={layer.id}>
-                  {layer.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="buffer-field buffer-field-inline">
-            <div className="buffer-field-distance">
-              <label htmlFor="buffer-distance">Avstand</label>
-              <input
-                id="buffer-distance"
-                type="number"
-                min="1"
-                step="1"
-                value={distanceMeters}
-                onChange={(e) => setDistanceMeters(e.target.value)}
-              />
+            <div className="buffer-field">
+              <label htmlFor="buffer-layer">Lag som skal buffres</label>
+              <select
+                id="buffer-layer"
+                value={selectedLayerId}
+                onChange={(e) => setSelectedLayerId(e.target.value)}
+              >
+                {layers.map((layer) => (
+                  <option key={layer.id} value={layer.id}>
+                    {layer.name}
+                  </option>
+                ))}
+              </select>
+              <p className="tool-panel-hint">
+                Standardvalg er det nyeste laget (siste i listen).
+              </p>
             </div>
-            <div className="buffer-field-unit">
-              <span>meter</span>
-            </div>
-          </div>
 
-          <button type="submit" className="buffer-submit">
-            Lag buffer
-          </button>
-        </form>
+            <div className="buffer-field buffer-field-inline">
+              <div className="buffer-field-distance">
+                <label htmlFor="buffer-distance">Avstand</label>
+                <input
+                  id="buffer-distance"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={distanceMeters}
+                  onChange={(e) => setDistanceMeters(e.target.value)}
+                />
+              </div>
+              <div className="buffer-field-unit">
+                <span>meter</span>
+              </div>
+            </div>
+
+            <button type="submit" className="buffer-submit">
+              Lag buffer
+            </button>
+          </form>
         </>
       )}
 

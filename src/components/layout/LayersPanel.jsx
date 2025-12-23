@@ -6,7 +6,7 @@ const TOUR_DEMO_LAYERS = [
   {
     id: "__tour_demo_layer_1__",
     name: "Demolag 1",
-    color: "#22c55e", // grønn
+    color: "#22c55e",
     fillOpacity: 0.7,
     visible: true,
     __isTourDemo: true,
@@ -14,22 +14,27 @@ const TOUR_DEMO_LAYERS = [
   {
     id: "__tour_demo_layer_2__",
     name: "Demolag 2",
-    color: "#3b82f6", // blå
+    color: "#3b82f6",
     fillOpacity: 0.55,
-    visible: false, // skjult for å vise ikon
+    visible: false,
     __isTourDemo: true,
   },
   {
     id: "__tour_demo_layer_3__",
     name: "Demolag 3",
-    color: "#f59e0b", // gul/oransje
+    color: "#f59e0b",
     fillOpacity: 0.85,
     visible: true,
     __isTourDemo: true,
   },
 ];
 
-export default function LayersPanel({ onClose, highlight, tourStep }) {
+export default function LayersPanel({
+  onClose,
+  highlight,
+  tourStep,
+  onEnterEditMode,
+}) {
   const {
     layers,
     updateLayer,
@@ -53,7 +58,7 @@ export default function LayersPanel({ onClose, highlight, tourStep }) {
   const colorTimersRef = useRef({});
   const opacityTimersRef = useRef({});
 
-  // Demo "edit" state (kun UI)
+  // Demo “redigering” kun for UI
   const [demoEditableId, setDemoEditableId] = useState(null);
 
   useEffect(() => {
@@ -85,23 +90,17 @@ export default function LayersPanel({ onClose, highlight, tourStep }) {
     });
   }, [displayLayers]);
 
-  // ✅ Når vi går inn i step 4: sett demo-lag 1 som "redigeres" (viser 🔒)
-  // Når vi går ut: nullstill
+  // Demo: lag 1 starter “låst” i intro
   useEffect(() => {
-    if (showTourDemoLayer) {
-      setDemoEditableId("__tour_demo_layer_1__");
-    } else {
-      setDemoEditableId(null);
-    }
+    if (showTourDemoLayer) setDemoEditableId("__tour_demo_layer_1__");
+    else setDemoEditableId(null);
   }, [showTourDemoLayer]);
 
   const handleColorChange = (layerId, value, isDemo) => {
     setLocalColors((prev) => ({ ...prev, [layerId]: value }));
     if (isDemo) return;
 
-    if (colorTimersRef.current[layerId]) {
-      clearTimeout(colorTimersRef.current[layerId]);
-    }
+    if (colorTimersRef.current[layerId]) clearTimeout(colorTimersRef.current[layerId]);
     colorTimersRef.current[layerId] = setTimeout(() => {
       updateLayer(layerId, { color: value });
     }, 120);
@@ -115,15 +114,12 @@ export default function LayersPanel({ onClose, highlight, tourStep }) {
     setLocalOpacity((prev) => ({ ...prev, [layerId]: normalized }));
     if (isDemo) return;
 
-    if (opacityTimersRef.current[layerId]) {
-      clearTimeout(opacityTimersRef.current[layerId]);
-    }
+    if (opacityTimersRef.current[layerId]) clearTimeout(opacityTimersRef.current[layerId]);
     opacityTimersRef.current[layerId] = setTimeout(() => {
       updateLayer(layerId, { fillOpacity: normalized });
     }, 120);
   };
 
-  // Tomt panel (bruk displayLayers)
   if (!displayLayers.length) {
     return (
       <div
@@ -164,7 +160,6 @@ export default function LayersPanel({ onClose, highlight, tourStep }) {
           const isTop = index === 0;
           const isBottom = index === displayLayers.length - 1;
 
-          // ✅ disable-regler gjelder for ALLE lag (inkl demo)
           const upDisabled = isTop;
           const downDisabled = isBottom;
 
@@ -172,71 +167,47 @@ export default function LayersPanel({ onClose, highlight, tourStep }) {
           const isRealEditing = !isDemo && editableLayerId === layer.id;
           const isEditing = isDemo ? isDemoEditing : isRealEditing;
 
-          const colorValue =
-            localColors[layer.id] ?? layer.color ?? "#3388ff";
+          const colorValue = localColors[layer.id] ?? layer.color ?? "#3388ff";
           const opacityValue = Math.round(
             100 * (localOpacity[layer.id] ?? layer.fillOpacity ?? 0.7)
           );
 
           return (
             <li key={layer.id} className="layers-row">
-              {/* Farge */}
               <input
                 type="color"
                 className="layers-color-input"
                 value={colorValue}
-                onChange={(e) =>
-                  handleColorChange(layer.id, e.target.value, isDemo)
-                }
+                onChange={(e) => handleColorChange(layer.id, e.target.value, isDemo)}
               />
 
-              {/* Synlighet */}
               <button
                 type="button"
-                className={`layer-visibility-toggle ${
-                  layer.visible === false ? "hidden" : ""
-                }`}
+                className={`layer-visibility-toggle ${layer.visible === false ? "hidden" : ""}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (isDemo) return; // demo: no-op
+                  if (isDemo) return;
                   toggleVisibility(layer.id);
                 }}
                 title={layer.visible === false ? "Vis lag" : "Skjul lag"}
               >
                 {layer.visible === false ? (
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"
-                      stroke="#888"
-                      strokeWidth="2"
-                    />
-                    <path
-                      d="M4 20L20 4"
-                      stroke="#888"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
+                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="#888" strokeWidth="2" />
+                    <path d="M4 20L20 4" stroke="#888" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 ) : (
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"
-                      stroke="#444"
-                      strokeWidth="2"
-                    />
+                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="#444" strokeWidth="2" />
                   </svg>
                 )}
               </button>
 
-              {/* Navn */}
               <input
                 className="layers-name-input"
                 value={localNames[layer.id] ?? ""}
                 onChange={(e) =>
-                  setLocalNames((prev) => ({
-                    ...prev,
-                    [layer.id]: e.target.value,
-                  }))
+                  setLocalNames((prev) => ({ ...prev, [layer.id]: e.target.value }))
                 }
                 onBlur={(e) => {
                   if (isDemo) return;
@@ -244,24 +215,19 @@ export default function LayersPanel({ onClose, highlight, tourStep }) {
                 }}
               />
 
-              {/* Opacity */}
               <div className="layers-opacity-wrapper">
                 <input
                   type="number"
                   min="0"
                   max="100"
                   value={opacityValue}
-                  onChange={(e) =>
-                    handleOpacityChange(layer.id, e.target.value, isDemo)
-                  }
+                  onChange={(e) => handleOpacityChange(layer.id, e.target.value, isDemo)}
                   className="layers-opacity-input"
                 />
                 <span className="layers-opacity-percent">%</span>
               </div>
 
-              {/* Knappene */}
               <div className="layers-row-buttons">
-                {/* ✅ ALLTID vis begge piler for linjering */}
                 <button
                   onClick={() => {
                     if (upDisabled) return;
@@ -286,27 +252,21 @@ export default function LayersPanel({ onClose, highlight, tourStep }) {
                   ↓
                 </button>
 
-                {/* Rediger: demo toggle lokalt, ekte bruker context */}
                 <button
                   type="button"
-                  title={
-                    isEditing
-                      ? "Avslutt redigering"
-                      : "Rediger lag (klikk polygon for å slette)"
-                  }
+                  title={isEditing ? "Avslutt redigering" : "Rediger lag (klikk polygon for å slette)"}
                   onClick={(e) => {
                     e.stopPropagation();
 
                     if (isDemo) {
-                      setDemoEditableId((prev) =>
-                        prev === layer.id ? null : layer.id
-                      );
+                      setDemoEditableId((prev) => (prev === layer.id ? null : layer.id));
                       return;
                     }
 
-                    setEditableLayerId(
-                      editableLayerId === layer.id ? null : layer.id
-                    );
+                    const entering = editableLayerId !== layer.id;
+                    if (entering) onEnterEditMode?.(); // ✅ lukk paneler før edit
+
+                    setEditableLayerId(entering ? layer.id : null);
                   }}
                 >
                   {isEditing ? "🔒" : "✏️"}

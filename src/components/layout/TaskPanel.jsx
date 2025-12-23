@@ -14,17 +14,12 @@ export default function TaskPanel({
 
   return (
     <aside
-      className={`task-panel ${
-        highlight ? "tour-highlight-tasks" : ""
-      }`}
+      className={`task-panel ${highlight ? "tour-highlight-tasks" : ""}`}
       onClick={(e) => e.stopPropagation()}
     >
       <div className="task-panel-header-row">
         <div>
-
-          <p className="task-panel-progress-label">
-
-          </p>
+          <p className="task-panel-progress-label"></p>
         </div>
 
         {onClose && (
@@ -47,60 +42,51 @@ export default function TaskPanel({
           </p>
         )}
 
-      <div className="task-panel-body">
-        {task.content.map((item, i) => {
-          // Vanlig tekst
-          if (typeof item === "string") {
-            return <p key={i}>{item}</p>;
-          }
+        <div className="task-panel-body">
+          {task.content?.map((item, i) => {
+            if (typeof item === "string") return <p key={i}>{item}</p>;
 
-          // Klikkbar lenke
-          if (item.type === "link") {
-            return (
-              <p key={i}>
-                {item.prefix}{" "}
-                <a
-                  href={item.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="task-panel-link"
-                >
-                  {item.text}
-                </a>
-                .
-              </p>
-            );
-          }
+            if (item?.type === "link") {
+              return (
+                <p key={i}>
+                  {item.prefix}{" "}
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="task-panel-link"
+                  >
+                    {item.text}
+                  </a>
+                  .
+                </p>
+              );
+            }
 
-          // 🖼️ Bilde
-          if (item.type === "image") {
-            return (
-              <figure key={i} className="task-panel-image-wrapper">
-                <img
-                  src={item.src}
-                  alt={item.alt || ""}
-                  className="task-panel-image"
-                />
-                {item.caption && (
-                  <figcaption className="task-panel-image-caption">
-                    {item.caption}
-                  </figcaption>
-                )}
-              </figure>
-            );
-          }
+            if (item?.type === "image") {
+              return (
+                <figure key={i} className="task-panel-image-wrapper">
+                  <img
+                    src={item.src}
+                    alt={item.alt || ""}
+                    className="task-panel-image"
+                  />
+                  {item.caption && (
+                    <figcaption className="task-panel-image-caption">
+                      {item.caption}
+                    </figcaption>
+                  )}
+                </figure>
+              );
+            }
 
-          return null;
-        })}
-      </div>
+            return null;
+          })}
+        </div>
       </div>
 
       <div className="task-panel-footer">
-        <PrimaryButton
-          variant="secondary"
-          onClick={onPrev}
-          disabled={index === 0}
-        >
+        <PrimaryButton variant="secondary" onClick={onPrev} disabled={index === 0}>
           Forrige
         </PrimaryButton>
 
@@ -110,8 +96,13 @@ export default function TaskPanel({
 
         <PrimaryButton
           variant="primary"
-          onClick={onNext}
-          disabled={index === total - 1}
+          onClick={() => {
+            if (index === total - 1) {
+              onClose?.();
+              return;
+            }
+            onNext();
+          }}
         >
           {index === total - 1 ? "Ferdig" : "Neste"}
         </PrimaryButton>
