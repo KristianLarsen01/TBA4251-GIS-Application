@@ -973,6 +973,16 @@
   color: #6b7280;
 }
 
+.task-panel-link {
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.task-panel-link:hover {
+  color: #1d4ed8;
+}
+
 /* =========================================================
    Lagpanel
    ========================================================= */

@@ -3,19 +3,21 @@
 const tasks = [
   {
     id: 1,
-    title: "Oppgave 1 – Last inn og avgrens data",
-    goal: "Få alle relevante datasett inn i kartet og klipp dem til Trondheim.",
+    title: "Oppgave 1 – Last ned og klargjør data",
+    goal: "Få alle relevante datasett inn i kartet.",
     content: [
-      "Last inn følgende lag som GeoJSON:",
-      "• TrondheimKommune.geojson (kommunepolygon)",
-      "• Personer.geojson (10 adressepunkter – én per venn)",
-      "• Fotballbaner.geojson (fotballbaner/idrettsanlegg)",
-      "• Kollektiv.geojson (holdeplasser/busstopp)",
+      {
+        type: "link",
+        text: "data",
+        url: "https://github.com/KristianLarsen01/TBA4251-GIS-Application/tree/main/public/data",
+        prefix: "Trykk på følgende lenke og last ned den zippede mappen",
+      },
+      "Unzip mappen på PC-en din og trykk på opplastningsknappen øverst i verktøylinjen til venstre.",
+      "Velg filene i den nye unzippede data-mappen:",
+      "• Leiligheter_finn.geojson",
+      "• Arealbruk.geojson",
       "",
-      "Bruk verktøyet Clip til å avgrense alle lag til Trondheim kommune:",
-      "• Klipp Personer, Fotballbaner og Kollektiv med TrondheimKommune.",
-      "",
-      "Når du er ferdig har du et ryddig analysekart der alle objekter ligger innenfor kommunen."
+      "Når du er ferdig har du 100 punkter som viser boliger, og mange polygoner som viser arealbruk i Trondheim.",
     ],
   },
   {

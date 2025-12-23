@@ -44,7 +44,7 @@ export default function TourOverlay({ step, onNext, onSkip }) {
       body = [
         "Til høyre kan du åpne Oppgave-panelet.",
         "Det fungerer som en liten veileder som beskriver hvert steg i analysen.",
-        "Du kan når som helst skjule det med Oppgave-knappen for å få mer kartplass.",
+        "Du kan når som helst skjule det med oppgave-knappen for å få mer kartplass.",
       ];
       break;
     case 6:

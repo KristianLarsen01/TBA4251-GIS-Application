@@ -48,9 +48,32 @@ export default function TaskPanel({
         )}
 
         <div className="task-panel-body">
-          {task.content.map((paragraph, i) => (
-            <p key={i}>{paragraph}</p>
-          ))}
+          {task.content.map((item, i) => {
+            // Vanlig tekst
+            if (typeof item === "string") {
+              return <p key={i}>{item}</p>;
+            }
+
+            // Klikkbar lenke
+            if (item.type === "link") {
+              return (
+                <p key={i}>
+                  {item.prefix}{" "}
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="task-panel-link"
+                  >
+                    {item.text}
+                  </a>
+                  .
+                </p>
+              );
+            }
+
+            return null;
+          })}
         </div>
       </div>
 

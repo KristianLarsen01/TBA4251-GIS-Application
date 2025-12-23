@@ -35,7 +35,7 @@ export default function UploadPanel({ onClose }) {
         // Sjekk filtype
         const isGeoJsonFile = /\.(geo)?json$/i.test(file.name);
         if (!isGeoJsonFile) {
-          throw new Error("Kun .geojson eller .json-filer er tillatt.");
+          throw new Error("Kun .geojson filer er tillatt.");
         }
 
         const text = await file.text();
@@ -100,14 +100,12 @@ export default function UploadPanel({ onClose }) {
 
       <p className="upload-panel-text">
         Velg ett eller flere GeoJSON-filer (for eksempel{" "}
-        <strong>TrondheimKommune.geojson</strong>,{" "}
-        <strong>Personer.geojson</strong>,{" "}
-        <strong>Fotballbaner.geojson</strong>,{" "}
-        <strong>Kollektiv.geojson</strong>).
+        <strong>Leiligheter_finn.geojson</strong>,{" "}
+        <strong>Arealbruk.geojson</strong>,{" "}
       </p>
 
       <label className="upload-dropzone">
-        <span>Dra og slipp filer her, eller klikk for å velge.</span>
+        <span>Klikk her for å velge filer.</span>
         <input
           type="file"
           accept=".geojson"

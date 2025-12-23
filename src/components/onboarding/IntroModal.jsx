@@ -33,6 +33,12 @@ export default function IntroModal({ step, onNext, onSkip }) {
               Før vi starter selve analysen tar vi en rask omvisning på
               hvordan siden er bygget opp.
             </p>
+            <p>
+              Applikasjonen er laget og testet med Google Chrome, og jeg vil derfor anbefale å bruke denne nettleseren. 
+            </p>
+             <p>
+              <strong>OBS: Siden lagres ikke, den resettes ved refresh.</strong> 
+            </p>
           </>
         ) : (
           <>
