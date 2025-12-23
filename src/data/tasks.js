@@ -22,35 +22,32 @@ const tasks = [
   },
   {
     id: 2,
-    title: "Oppgave 2 – Gå-avstand fra hver person (gangbuffer)",
-    goal: "Lage en buffersone rundt hver person som viser hvor langt de kan gå.",
+    title: "Oppgave 2 – Opprett analysepolygon",
+    goal: "Lag et analysepolygon over Trondheim.",
     content: [
-      "Vi antar at alle i vennegjengen kan gå omtrent 10 minutter til fots.",
+      "Bruk Polygon-tegneverktøyet til å tegne et polygon rundt Trondheim-området:",
+      {
+        type: "image",
+        src: "./public/task_images/analysepolygon.png",
+        alt: "Eksempel på analysepolygon rundt Trondheim",
+      },
+      "Gi laget navnet 'Analysepolygon' og en passende farge, det kan være greit å flytte dette laget til toppen av laglisten i Lag-panelet. (Bruk pilene opp/ned)",
+      "Dette laget skal brukes til å klippe alle andre lag til kun å vise data innenfor ditt analyseområde.",
+    ],
+  },
+  {
+    id: 3,
+    title: "Oppgave 3 – Rydd Arealbruk-laget",
+    goal: "Fjerne alle unødvendige polygon.",
+    content: [
+      "Dette laget har property 'featureType' som angir hva slags arealbruk det er.",
+      "Bruk Area Filter for å beholde kun de som har 'featureType' lik 'SportIdrettPlass'.",
       "",
       "• Velg laget Personer.",
       "• Bruk Buffer med radius for gangavstand, for eksempel 700 meter.",
       "• Lagre resultatet som Person_gangbuffer.",
       "",
       "Dette laget viser alle områdene hver person kan nå ved å gå."
-    ],
-  },
-  {
-    id: 3,
-    title: "Oppgave 3 – Hvem når en fotballbane bare ved å gå?",
-    goal: "Finne hvilke personer som kan gå direkte til en fotballbane.",
-    content: [
-      "Bruk Intersect mellom:",
-      "• Person_gangbuffer (fra forrige oppgave)",
-      "• Fotballbaner",
-      "",
-      "Lagre resultatet som Treff_gang_person_bane.",
-      "",
-      "Resultatet viser alle fotballbaner som ligger innen gangavstand for minst én person,",
-      "og hvilke personer det gjelder.",
-      "",
-      "Noter gjerne:",
-      "• Hvor mange personer kan gå til en bane?",
-      "• Hvilke baner har flest personer innen gangavstand?"
     ],
   },
   {

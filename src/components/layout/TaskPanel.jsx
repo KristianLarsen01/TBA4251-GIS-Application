@@ -47,34 +47,52 @@ export default function TaskPanel({
           </p>
         )}
 
-        <div className="task-panel-body">
-          {task.content.map((item, i) => {
-            // Vanlig tekst
-            if (typeof item === "string") {
-              return <p key={i}>{item}</p>;
-            }
+      <div className="task-panel-body">
+        {task.content.map((item, i) => {
+          // Vanlig tekst
+          if (typeof item === "string") {
+            return <p key={i}>{item}</p>;
+          }
 
-            // Klikkbar lenke
-            if (item.type === "link") {
-              return (
-                <p key={i}>
-                  {item.prefix}{" "}
-                  <a
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="task-panel-link"
-                  >
-                    {item.text}
-                  </a>
-                  .
-                </p>
-              );
-            }
+          // Klikkbar lenke
+          if (item.type === "link") {
+            return (
+              <p key={i}>
+                {item.prefix}{" "}
+                <a
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="task-panel-link"
+                >
+                  {item.text}
+                </a>
+                .
+              </p>
+            );
+          }
 
-            return null;
-          })}
-        </div>
+          // 🖼️ Bilde
+          if (item.type === "image") {
+            return (
+              <figure key={i} className="task-panel-image-wrapper">
+                <img
+                  src={item.src}
+                  alt={item.alt || ""}
+                  className="task-panel-image"
+                />
+                {item.caption && (
+                  <figcaption className="task-panel-image-caption">
+                    {item.caption}
+                  </figcaption>
+                )}
+              </figure>
+            );
+          }
+
+          return null;
+        })}
+      </div>
       </div>
 
       <div className="task-panel-footer">

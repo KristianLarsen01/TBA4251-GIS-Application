@@ -13,6 +13,7 @@ export default function TourOverlay({ step, onNext, onSkip }) {
         "Midt på siden har du selve kartet.",
         "Her vises Trondheim og alle datasett du laster inn.",
         "Panning og zoom fungerer som i andre webkart (dra og scroll).",
+        "Nederst til høyre kan du endre bakgrunnskartet til det som passer deg best under de forskjellige oppgavene.",
       ];
       break;
     case 3:
