@@ -28,9 +28,10 @@ const tasks = [
       "Bruk Polygon-tegneverktøyet til å tegne et polygon rundt Trondheim-området:",
       {
         type: "image",
-        src: "./public/task_images/analysepolygon.png",
+        src: `${import.meta.env.BASE_URL}task_images/analysepolygon.png`,
         alt: "Eksempel på analysepolygon rundt Trondheim",
       },
+
       "Gi laget navnet 'Analysepolygon' og en passende farge, det kan være greit å flytte dette laget til toppen av laglisten i Lag-panelet. (Bruk pilene opp/ned)",
       "Dette laget skal brukes til å klippe alle andre lag til kun å vise data innenfor ditt analyseområde.",
     ],
