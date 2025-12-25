@@ -23,7 +23,7 @@ export default function IntroModal({ step, onNext, onSkip }) {
               På Finn.no fant du 100 leiligheter som skal leies ut,
               og du er ekstra interessert i 10 av dem. 
               Din store interesse for å spille fotball 
-              gjør at du ønsker å finne den beste beliggenheten i forhold til fotballbaner.
+              gjør at du ønsker å finne den beste beliggenheten med tanke på fotballbaner.
             </p>
             <p>
               Underveis går du gjennom en kort veileder med oppgaver,
@@ -35,6 +35,7 @@ export default function IntroModal({ step, onNext, onSkip }) {
             </p>
             <p>
               Applikasjonen er laget og testet med Google Chrome, og jeg vil derfor anbefale å bruke denne nettleseren. 
+              Den fungerer best på større PC-skjermer. På mindre skjermer kan panelene havne over hverandre.
             </p>
              <p>
               <strong>OBS: Siden lagres ikke, den resettes ved refresh.</strong> 

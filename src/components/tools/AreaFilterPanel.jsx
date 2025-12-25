@@ -144,7 +144,7 @@ export default function AreaFilterPanel({ onClose }) {
 
             <div className="tool-field">
               <label>Arealintervall (m²)</label>
-              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
                 <input
                   type="number"
                   min="0"
@@ -152,7 +152,7 @@ export default function AreaFilterPanel({ onClose }) {
                   placeholder="Min (tom = ingen)"
                   value={minVal}
                   onChange={(e) => setMinVal(e.target.value)}
-                  style={{ flex: 1 }}
+                  style={{ flex: "1 1 calc(50% - 0.25rem)", minWidth: "80px" }}
                 />
                 <input
                   type="number"
@@ -161,7 +161,7 @@ export default function AreaFilterPanel({ onClose }) {
                   placeholder="Max (tom = ingen)"
                   value={maxVal}
                   onChange={(e) => setMaxVal(e.target.value)}
-                  style={{ flex: 1 }}
+                  style={{ flex: "1 1 calc(50% - 0.25rem)", minWidth: "80px" }}
                 />
               </div>
               <p className="tool-panel-hint">
