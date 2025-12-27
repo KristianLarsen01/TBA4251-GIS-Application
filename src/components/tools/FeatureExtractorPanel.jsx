@@ -1,4 +1,20 @@
-// src/components/tools/FeatureExtractorPanel.jsx
+/*
+  Hensikt:
+  Dette panelet lar brukeren “plukke ut” features basert på properties.
+  For eksempel: featureType = SportIdrettPlass, eller interesse = høy.
+
+  Hvor skjer selve filtreringen?
+  - I utils/featureFilter.js.
+    Det er ren kode skrevet av meg (ingen Turf her), og jeg bruker den i UI som en liten regel-motor.
+
+  Eksterne ting:
+  - Ingen GIS-bibliotek her; dette er bare UI + en liten regelmotor jeg har laget.
+
+  Min kode vs bibliotek:
+  - Skjemaet/regler/knapper og kall til addLayer er skrevet av meg.
+  - useState/useEffect/useMemo og oppdatering av UI er rammeverk.
+*/
+
 import { useEffect, useMemo, useState } from "react";
 import { useLayers } from "../../context/LayersContext.jsx";
 import { filterFeatureCollection, listPropertyKeys } from "../../utils/featureFilter.js";
@@ -90,6 +106,7 @@ export default function FeatureExtractorPanel({ onClose }) {
   };
 
   const handleRun = (e) => {
+    // Jeg kjører filtrering, og oppretter nytt lag hvis jeg faktisk fikk treff.
     e.preventDefault();
     setStatus("");
     setStatusType("ok");

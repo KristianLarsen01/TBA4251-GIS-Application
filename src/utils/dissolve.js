@@ -1,3 +1,16 @@
+/*
+  Hensikt:
+  Denne fila gjør “Dissolve” på polygonlag.
+  Dissolve betyr: slå sammen polygoner som hører sammen, og fjern interne grenser.
+
+  Eksterne biblioteker (hvorfor og hvordan):
+  - Turf.js: Jeg bruker turf.union for å slå sammen flere polygoner til én geometri.
+
+  Min kode vs bibliotek:
+  - Turf gjør selve union-operasjonen.
+  - Jeg har skrevet gruppering per property (hvis ønsket) + normalisering av input.
+*/
+
 import * as turf from "@turf/turf";
 import { featureCollection } from "@turf/helpers";
 
@@ -38,6 +51,9 @@ function getAllPolygons(fc) {
  * - propertyKey = "X"   -> dissolve per unik verdi i properties[X]
  */
 export function dissolveGeoJson(layer, propertyKey = null) {
+  // Her skiller jeg mellom to måter å dissolve på:
+  // - propertyKey = null  => “slå sammen alt til én flate”
+  // - propertyKey = "X"   => slå sammen per unik verdi i properties[X]
   if (!layer) throw new Error("Mangler lag for dissolve.");
 
   const fc = toFeatureCollection(layer);

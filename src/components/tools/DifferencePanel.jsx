@@ -1,3 +1,19 @@
+/*
+  Hensikt:
+  Dette panelet lar brukeren gjøre Difference (A − B):
+  Jeg tar Lag A og trekker fra overlappen med Lag B.
+
+  Hvor skjer selve GIS-beregningen?
+  - I utils/difference.js (differenceGeoJson). Der brukes Turf.
+
+  Eksterne biblioteker:
+  - Turf (indirekte): inne i differenceGeoJson.
+
+  Min kode vs bibliotek:
+  - Denne fila er UI + validering + addLayer, skrevet av meg.
+  - Turf gjør geometri-beregningene.
+*/
+
 import { useEffect, useState } from "react";
 import { useLayers } from "../../context/LayersContext.jsx";
 import { differenceGeoJson } from "../../utils/difference.js";
@@ -43,6 +59,7 @@ export default function DifferencePanel({ onClose }) {
   }, [layers]);
 
   const handleSubmit = (e) => {
+    // Jeg sjekker at jeg har valgt to ulike polygonlag.
     e.preventDefault();
     setStatus("");
 

@@ -1,4 +1,19 @@
-// src/components/tools/AreaFilterPanel.jsx
+/*
+  Hensikt:
+  Dette panelet lar brukeren filtrere polygoner basert på areal (m²), ved å sette min/max.
+  Resultatet blir et nytt lag, og hver feature får en property som heter area_m2.
+
+  Hvor skjer selve GIS-beregningen?
+  - I utils/areaFilter.js (areaFilterGeoJson), som bruker Turf til å regne areal.
+
+  Eksterne biblioteker:
+  - Turf (indirekte): areaFilterGeoJson bruker turf.area.
+
+  Min kode vs bibliotek:
+  - Denne fila er UI + validering + addLayer, skrevet av meg.
+  - Turf regner ut areal.
+*/
+
 import { useEffect, useMemo, useState } from "react";
 import { useLayers } from "../../context/LayersContext.jsx";
 import { areaFilterGeoJson } from "../../utils/areaFilter.js";
@@ -37,6 +52,7 @@ export default function AreaFilterPanel({ onClose }) {
   );
 
   const handleSubmit = (e) => {
+    // Jeg validerer tall og oppretter nytt filtrert lag.
     e.preventDefault();
     setStatus("");
 

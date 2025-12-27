@@ -1,3 +1,17 @@
+/*
+  Hensikt:
+  Globale CSS-regler som gjelder for hele appen (grunnoppsett for body, knapper,
+  modal, osv.). Dette er "vanlig CSS" og lastes inn fra appens startpunkt.
+
+  Eksterne biblioteker:
+  - Ingen direkte. (Leaflet sin CSS lastes separat i `src/main.jsx`.)
+
+  Min kode vs bibliotek:
+  - Alt i denne filen er skrevet av meg.
+  - Merk: Denne filen inneholder også en del styling som historisk ble kalt
+    "App.css" i tidligere iterasjoner. Jeg har beholdt den for stabilitet.
+*/
+
 /* index.css */
 *,
 *::before,

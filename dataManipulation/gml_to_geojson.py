@@ -4,13 +4,13 @@ from lxml import etree
 from pyproj import Transformer
 
 # =========================================================
-# 🔧 DET ENESTE DU ENDRES
+# Endre til filer du vil bruke
 # =========================================================
 INPUT_GML = "dataManipulation/input/Basisdata_5001_Trondheim_5972_FKB-Arealbruk_GML.gml"
 OUTPUT_GEOJSON = "dataManipulation/output/output.geojson"
 
 # =========================================================
-# 🔁 KOORDINATSYSTEM (enkelt)
+# KOORDINATSYSTEM (enkelt)
 # - prøver å lese EPSG fra GML (srsName)
 # - hvis den ikke finner: antar EPSG:25832 (vanlig i Norge)
 # - target er alltid EPSG:4326 (lon/lat) for webkart/Turf
@@ -18,7 +18,7 @@ OUTPUT_GEOJSON = "dataManipulation/output/output.geojson"
 DEFAULT_SOURCE_EPSG = "EPSG:25832"
 TARGET_EPSG = "EPSG:4326"
 
-# GML 3.2 er vanlig, men vi bruker local-name() i XPath så prefix er ikke kritisk
+# GML 3.2 er vanlig, men jeg bruker local-name() i XPath så prefix er ikke kritisk
 GML32_ID = "{http://www.opengis.net/gml/3.2}id"
 GML31_ID = "{http://www.opengis.net/gml}id"
 
@@ -164,7 +164,7 @@ def parse_polygon_like(poly_el, transformer):
 def parse_surface(surface_el, transformer):
     """
     FKB/GML bruker ofte gml:Surface med patches.
-    Vi leter etter én ring med posList (ytterring).
+    Jeg leter etter én ring med posList (ytterring).
     """
     # Finn første posList inne i surface (typisk LinearRing i patches)
     poslist = first(surface_el, ".//*[local-name()='posList']")
@@ -336,7 +336,7 @@ def extract_properties(feature_el):
                 if any(s in base_l for s in ("type", "kode", "kategori", "areal", "formål", "idrett")):
                     props.setdefault("typeLabel", v)
 
-    # 4) Hvis vi fortsatt ikke har en god "typeLabel", prøv en heuristikk:
+    # 4) Hvis jeg fortsatt ikke har en god "typeLabel", prøv en heuristikk:
     # velg første property som inneholder "type/kode" i nøkkelen
     if "typeLabel" not in props:
         for k, v in props.items():
@@ -355,10 +355,10 @@ def main():
     root = tree.getroot()
 
     transformer, detected_src = pick_transformer(root)
-    print(f"ℹ️ Bruker kilde-CRS: {detected_src}  →  {TARGET_EPSG}")
+    print(f"Bruker kilde-CRS: {detected_src}  →  {TARGET_EPSG}")
 
     feature_els = find_feature_elements(root)
-    print(f"ℹ️ Fant {len(feature_els)} feature-elementer i fila")
+    print(f"Fant {len(feature_els)} feature-elementer i fila")
 
     features = []
     skipped = 0
@@ -385,7 +385,7 @@ def main():
     with open(OUTPUT_GEOJSON, "w", encoding="utf-8") as f:
         json.dump(geojson, f, ensure_ascii=False, indent=2)
 
-    print(f"✅ Skrev {len(features)} features til {OUTPUT_GEOJSON} (hoppet over {skipped})")
+    print(f" Skrev {len(features)} features til {OUTPUT_GEOJSON} (hoppet over {skipped})")
 
 
 if __name__ == "__main__":

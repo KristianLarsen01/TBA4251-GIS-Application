@@ -1,4 +1,19 @@
-// src/utils/buffer.js
+/*
+  Hensikt:
+  Denne fila lager en buffer (en “sone rundt”) et GeoJSON-lag.
+  Jeg bruker dette når jeg vil lage et nytt polygonlag som ligger X meter rundt
+  punkter/linjer/polygoner i et valgt lag.
+
+  Eksterne biblioteker (hvorfor og hvordan):
+  - Turf (@turf/buffer): gjør selve buffer-beregningen.
+  - @turf/helpers (featureCollection): hjelper meg å pakke data inn i FeatureCollection.
+
+  Min kode vs bibliotek:
+  - Turf gjør geometri-matematikken.
+  - Jeg normaliserer input (Feature/Geometry -> FeatureCollection), validerer meterverdi,
+    og sørger for at jeg alltid returnerer en FeatureCollection.
+*/
+
 import buffer from "@turf/buffer";
 import { featureCollection } from "@turf/helpers";
 
@@ -41,7 +56,7 @@ export function createBufferedGeoJson(sourceLayer, distanceMeters) {
     steps: 16, // kan justeres for glattere buffer
   });
 
-  // Sørg for at vi fortsatt returnerer en FeatureCollection
+  // Sørg for at jeg fortsatt returnerer en FeatureCollection
   if (buffered.type === "FeatureCollection") {
     return buffered;
   }

@@ -1,4 +1,18 @@
-// src/utils/featureFilter.js
+/*
+  Hensikt:
+  Denne fila er en liten “filter-motor” for Feature Extractor-verktøyet.
+  Den lar meg filtrere GeoJSON-features basert på properties:
+  - finnes/mangler
+  - lik/ulik
+  - inneholder tekst
+  - større/mindre enn (for tall)
+
+  Eksterne biblioteker (hvorfor og hvordan):
+  - Ingen. Dette er ren JavaScript-logikk.
+
+  Min kode vs bibliotek:
+  - Hele denne fila er skrevet av meg.
+*/
 
 export function listPropertyKeys(fc) {
   if (!fc?.features?.length) return [];

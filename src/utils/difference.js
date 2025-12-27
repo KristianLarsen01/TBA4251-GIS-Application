@@ -1,4 +1,18 @@
-// src/utils/difference.js
+/*
+  Hensikt:
+  Denne fila gjør GIS-operasjonen Difference (A − B) på polygonlag.
+  Altså: jeg tar et polygonlag (A) og “skjærer bort” det som overlapper med et annet (B).
+
+  Eksterne biblioteker (hvorfor og hvordan):
+  - Turf.js: brukes til difference/union/buffer/area/length og noen små geometri-triks.
+    Turf gjør den tunge geometri-matematikken.
+
+  Min kode vs bibliotek:
+  - Turf gjør selve difference.
+  - Jeg har skrevet wrapperne (fallback-signatur), union-masken, “buffer(0)”-healing,
+    og filtrering av slivers (små støy-polygoner) for å få pene resultater.
+*/
+
 import difference from "@turf/difference";
 import * as turf from "@turf/turf";
 import { featureCollection } from "@turf/helpers";

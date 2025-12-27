@@ -1,4 +1,20 @@
 // src/utils/intersect.js
+/*
+  Hensikt:
+  Denne fila gjør GIS-operasjonen Intersect (A ∩ B) på GeoJSON.
+  Altså: jeg finner overlappen mellom to polygonlag.
+
+  Eksterne biblioteker (hvorfor og hvordan):
+  - Turf.js: Dette er et kjent bibliotek for geometri-operasjoner i JavaScript.
+    Jeg bruker spesielt @turf/intersect og @turf/turf.union for å slippe å implementere
+    komplisert polygon-matematikk selv.
+
+  Min kode vs bibliotek:
+  - Turf gjør selve “mattejobben” (intersect/union).
+  - Resten (validering, normalisering, MultiPolygon-håndtering, feilmeldinger)
+    er skrevet av meg for å få robust og forståelig oppførsel i appen.
+*/
+
 import intersect from "@turf/intersect";
 import * as turf from "@turf/turf";
 import { featureCollection } from "@turf/helpers";
@@ -61,6 +77,8 @@ function looksProjectedMeters(feat) {
 
 // Wrapper: prøv (a,b), fallback til FeatureCollection([a,b]) for kompatibilitet
 function turfIntersect(a, b) {
+  // Bibliotek: selve intersect-funksjonen kommer fra Turf.
+  // Jeg prøver to kall-måter fordi Turf-versjoner kan ha litt ulik signatur.
   const fn = intersect;
   try {
     return fn(a, b);
@@ -87,6 +105,8 @@ function unionMany(polys) {
   if (!polys.length) return null;
   if (polys.length === 1) return polys[0];
 
+  // Bibliotek: union kommer fra Turf.
+  // Jeg prøver først "batch" union, og faller tilbake til iterativ union.
   // prøv batch-union først
   try {
     return turf.union(featureCollection(polys));
@@ -130,7 +150,7 @@ export function intersectGeoJson(layerA, layerB) {
     );
   }
 
-  // Vi unioner B til én maske, og intersecter hver A-feature mot masken
+  // Jeg unioner B til én maske, og intersecter hver A-feature mot masken
   const maskB = unionMany(bPolys);
   if (!maskB?.geometry) throw new Error("Klarte ikke å lage en gyldig maske av Lag B.");
 

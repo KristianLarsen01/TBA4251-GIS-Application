@@ -1,3 +1,16 @@
+/*
+  Hensikt:
+  Dette er “omvisningskortet” (tour overlay) som dukker opp og forklarer UI-et steg for steg.
+  Den viser tekst for steg 2–6, og lar brukeren gå videre eller avslutte.
+
+  Eksterne ting:
+  - Jeg bruker useState for å trigge en liten lukk-animasjon før jeg faktisk lukker.
+
+  Min kode vs bibliotek:
+  - Tekstinnhold, step-switch og animasjons-timing er skrevet av meg.
+  - useState og oppdatering av UI er rammeverk.
+*/
+
 import { useState } from "react";
 
 export default function TourOverlay({ step, onNext, onSkip }) {
@@ -7,6 +20,7 @@ export default function TourOverlay({ step, onNext, onSkip }) {
   let body = [];
 
   switch (step) {
+    // Jeg har gjort det slik at hvert case er ett “kapittel” i omvisningen.
     case 2:
       title = "Kartet";
       body = [

@@ -1,5 +1,18 @@
-// src/App.jsx
-import { useState, useEffect } from "react";
+/*
+  Hensikt:
+  Dette er “dirigenten” i applikasjonen. Her bestemmer jeg hvilke paneler som er åpne,
+  hvilken oppgave brukeren er på, og jeg setter sammen toppbar, verktøylinje, kart og sidepanel.
+
+  Eksterne ting (hvorfor og hvordan):
+  - Leaflet og Turf brukes ikke direkte her, men App skrur på paneler som igjen bruker dem.
+  - Jeg bruker useState/useEffect (hooks) for å holde styr på hva som er åpent og valgt.
+
+  Min kode vs bibliotek:
+  - All “hvem-er-åpen-når”-logikk og oppsett av komponenter er skrevet av meg.
+  - Hook-funksjonene (useState/useEffect) kommer fra rammeverket.
+*/
+
+import { useState } from "react";
 import Header from "./components/layout/Header.jsx";
 import ToolRail from "./components/layout/ToolRail.jsx";
 import MapContainer from "./components/layout/MapContainer.jsx";
@@ -22,6 +35,9 @@ import { useDrawing } from "./context/DrawingContext.jsx";
 import { useLayers } from "./context/LayersContext.jsx";
 
 export default function App() {
+  /* ------------------------------------------------------
+     UI-tilstand (hva som er åpent akkurat nå)
+     ------------------------------------------------------ */
   const [activeTaskIndex, setActiveTaskIndex] = useState(0);
 
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -38,15 +54,20 @@ export default function App() {
   const [tasksOpen, setTasksOpen] = useState(false);
 
   const { stopDrawing, activeTool } = useDrawing();
-  const { layers, editableLayerId, setEditableLayerId } = useLayers();
+  const { editableLayerId, setEditableLayerId } = useLayers();
 
-  // Mobil-advarsel
-  const [showMobileWarning, setShowMobileWarning] = useState(false);
-  useEffect(() => {
-    if (window.innerWidth < 900) setShowMobileWarning(true);
-  }, []);
+  /* ------------------------------------------------------
+     Mobil-advarsel
+     (Dette er ikke en “feil”, bare et lite varsel om at små skjermer kan bli trangt.)
+     ------------------------------------------------------ */
+  const [showMobileWarning, setShowMobileWarning] = useState(
+    () => window.innerWidth < 900
+  );
 
-  // Tour
+  /* ------------------------------------------------------
+     Tour / omvisning
+    useTour er min egen hook som styrer hvilken del av UI som skal highlightes.
+     ------------------------------------------------------ */
   const {
     tourStep,
     tourActive,
@@ -61,7 +82,9 @@ export default function App() {
 
   const currentTask = tasks[activeTaskIndex];
 
-  /* ------------------ Felles helpers ------------------ */
+    /* ------------------ Små hjelpefunksjoner ------------------
+      Her har jeg bare litt “rydd i UI”-funksjoner.
+      ---------------------------------------------------------- */
 
   const closeAllToolPanels = () => {
     setUploadOpen(false);
@@ -84,7 +107,9 @@ export default function App() {
     exitEditMode();
   };
 
-  /* ------------------ Handlers ------------------ */
+    /* ------------------ Handlers (klikk og knappetrykk) ------------------
+      Her bestemmer jeg hva som skjer når bruker trykker på knapper.
+      --------------------------------------------------------------- */
 
   const handleUploadClick = () => {
     if (tourActive) return;
@@ -141,6 +166,14 @@ export default function App() {
   };
 
   return (
+    /*
+      UI-oppsettet er:
+      - Header øverst
+      - Venstre: ToolRail
+      - Midten: kart (MapContainer) + flytende tool-paneler
+      - Høyre: lagpanel + oppgavepanel
+      - Over alt: onboarding/tour når den er aktiv
+    */
     <div className={`app-shell ${tourActive ? "tour-active" : ""}`}>
       <Header currentStep={activeTaskIndex + 1} totalSteps={tasks.length} />
 

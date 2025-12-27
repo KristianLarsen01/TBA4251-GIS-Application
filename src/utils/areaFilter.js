@@ -1,4 +1,16 @@
-// src/utils/areaFilter.js
+/*
+  Hensikt:
+  Denne fila filtrerer polygoner basert på areal (m²).
+  Typisk bruk: “behold bare fotballbaner større enn X m²”.
+
+  Eksterne biblioteker (hvorfor og hvordan):
+  - Turf.js: turf.area regner ut areal i kvadratmeter på GeoJSON-polygon.
+
+  Min kode vs bibliotek:
+  - Turf regner ut arealet.
+  - Jeg har skrevet validering, MultiPolygon-splitting (explodeToPolygons) og filtreringen.
+*/
+
 import * as turf from "@turf/turf";
 import { featureCollection } from "@turf/helpers";
 

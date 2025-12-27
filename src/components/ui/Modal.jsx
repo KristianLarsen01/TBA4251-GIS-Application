@@ -1,4 +1,15 @@
-// src/components/ui/Modal.jsx
+/*
+  Hensikt:
+  En enkel gjenbrukbar modal (dialog) med tittel, lukkeknapp, innhold og valgfri footer.
+  Brukes der jeg vil ha en “pop-up” som ligger over resten av siden.
+
+  Eksterne ting:
+  - Ingen tredjepartsbibliotek her; dette er bare struktur + CSS-klasser.
+
+  Min kode vs bibliotek:
+  - Struktur og klasse-navn er skrevet av meg.
+  - Selve “renderingen” av komponenten er rammeverk.
+*/
 
 export default function Modal({ title, onClose, children, footer }) {
   return (

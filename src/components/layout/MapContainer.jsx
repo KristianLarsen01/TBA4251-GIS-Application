@@ -1,9 +1,28 @@
-// src/components/layout/MapContainer.jsx
+/*
+  Hensikt:
+  Dette er selve kart-komponenten. Den gjør flere ting:
+  - starter Leaflet-kartet
+  - tegner alle GeoJSON-lagene fra LayersContext oppå kartet
+  - håndterer tegneverktøy (punkt/linje/polygon) og lager nye lag av det du tegner
+  - har en liten meny for å bytte bakgrunnskart (Mapbox tiles)
+
+  Eksterne biblioteker / tjenester (hvorfor og hvordan):
+  - Leaflet (L): Kartmotoren. Jeg bruker L.map, L.tileLayer og L.geoJSON for å
+    vise kart og GeoJSON på en enkel måte.
+  - Mapbox (tiles): Jeg henter bakgrunnskart som fliser via URL med access_token.
+    Dette er ikke “kodebibliotek”, men en kart-tjeneste som Leaflet viser.
+
+  Min kode vs bibliotek:
+  - All logikk for tegning, lagbygging, marker/slett og basemap-meny er skrevet av meg.
+  - Leaflet sin rendering og hendelser (map.on, layerGroup, geoJSON osv.) er bibliotek.
+*/
+
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import { useLayers } from "../../context/LayersContext.jsx";
 import { useDrawing } from "../../context/DrawingContext.jsx";
 
+// Mapbox-token kommer fra .env (Vite leser det inn som import.meta.env.*)
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 const BASEMAPS = [
@@ -53,6 +72,12 @@ const BASEMAPS = [
 
 
 export default function MapContainer() {
+  /*
+    Viktig å vite:
+    Leaflet lager et kart-objekt som lever “utenfor komponenten”.
+    Derfor bruker jeg refs (useRef) for å lagre map-objektet, laggrupper osv.
+    Komponenten kan rendre på nytt, men jeg vil ikke opprette kartet på nytt hver gang.
+  */
   const mapRef = useRef(null);
   const mapElRef = useRef(null);
   const dataLayerGroupRef = useRef(null);
@@ -62,6 +87,8 @@ export default function MapContainer() {
   const verticesLayerRef = useRef(null);
   const drawingPointsRef = useRef([]);
   const activeToolRef = useRef(null);
+  const pushPointRef = useRef(null);
+  const finishDrawingRef = useRef(null);
 
   const [mapReady, setMapReady] = useState(false);
   const [drawingPoints, setDrawingPoints] = useState([]);
@@ -73,17 +100,22 @@ export default function MapContainer() {
   const { layers, addLayer, editableLayerId, removeFeatures } = useLayers();
   const { activeTool, sessionId, stopDrawing } = useDrawing();
 
-  // Nytt: aktivt bakgrunnskart + om menyen er åpen
+  // Hvilket bakgrunnskart som er valgt + om menyen er åpen.
   const [activeBasemapId, setActiveBasemapId] = useState(BASEMAPS[0].id);
   const [basemapMenuOpen, setBasemapMenuOpen] = useState(false);
 
-  // 🆕 Multi-select sletting i aktivt edit-lag
-  const [selectedFeatureIds, setSelectedFeatureIds] = useState([]); // array av ids
+  const [selectedFeatureIds, setSelectedFeatureIds] = useState([]);
 
+  // Jeg peker alltid refene på siste versjon av funksjonene (for event handlers).
+  pushPointRef.current = pushPoint;
+  finishDrawingRef.current = finishDrawing;
+
+  // Når jeg bytter hvilket lag som er “i redigering”: nullstill markering.
   useEffect(() => {
     setSelectedFeatureIds([]);
   }, [editableLayerId]);
 
+  // Tastatursnarveier i redigeringsmodus (Enter = slett, Esc = tøm markering).
   useEffect(() => {
   const shouldHandle =
     editableLayerId && !activeToolRef.current && !activeTool && selectedFeatureIds.length > 0;
@@ -106,9 +138,11 @@ export default function MapContainer() {
   return () => window.removeEventListener("keydown", onKeyDown);
 }, [editableLayerId, activeTool, selectedFeatureIds, removeFeatures]);
 
-  /* -------------------------------------------------------
-     Init kart (uten bakgrunnskart – det styres i egen effekt)
-  -------------------------------------------------------- */
+    /* -------------------------------------------------------
+      Init kart (Leaflet)
+      Leaflet lager kartobjektet, men jeg bestemmer startposisjon og setter opp
+      egne layerGroups (ett for bakgrunnskart, ett for mine GeoJSON-lag).
+    -------------------------------------------------------- */
   useEffect(() => {
     if (mapRef.current || !mapElRef.current) return;
 
@@ -131,7 +165,7 @@ export default function MapContainer() {
     };
   }, []);
 
-    // Lukk basemap-meny hvis man klikker utenfor
+  // Jeg lukker basemap-menyen hvis jeg klikker utenfor den.
   useEffect(() => {
     if (!basemapMenuOpen) return;
 
@@ -149,9 +183,11 @@ export default function MapContainer() {
   }, [basemapMenuOpen]);
 
 
-  /* -------------------------------------------------------
-     Bakgrunnskart: bytt når activeBasemapId endres
-  -------------------------------------------------------- */
+    /* -------------------------------------------------------
+      Bakgrunnskart (Mapbox tiles)
+      Bibliotek: Leaflet L.tileLayer viser flisene.
+      Tjeneste: URL-ene peker til Mapbox.
+    -------------------------------------------------------- */
   useEffect(() => {
     if (!mapReady) return;
     const map = mapRef.current;
@@ -175,9 +211,11 @@ export default function MapContainer() {
     baseLayerRef.current = base;
   }, [mapReady, activeBasemapId]);
 
-  /* -------------------------------------------------------
-     Tegn alle datalag (GeoJSON) oppå bakgrunnskartet
-  -------------------------------------------------------- */
+    /* -------------------------------------------------------
+      Tegn alle datalag (GeoJSON) oppå bakgrunnskartet
+      Bibliotek: L.geoJSON gjør GeoJSON om til Leaflet-lag.
+      Jeg styler basert på type (polygon/linje/punkt) og valgt/ikke valgt.
+    -------------------------------------------------------- */
   useEffect(() => {
     const map = mapRef.current;
     const group = dataLayerGroupRef.current;
@@ -266,8 +304,6 @@ export default function MapContainer() {
           },
 
         });
-
-        // ✅ VIKTIG: addTo må være her inne
         geoJsonLayer.addTo(group);
       });
     }, [layers, editableLayerId, selectedFeatureIds, removeFeatures]);
@@ -276,7 +312,7 @@ export default function MapContainer() {
 
 
   /* -------------------------------------------------------
-     Tegneverktøy – lytte på klikk/dobbelklikk/tastatur
+     Tegneverktøy – lytte på klikk/tastatur
   -------------------------------------------------------- */
   useEffect(() => {
     activeToolRef.current = activeTool;
@@ -311,7 +347,7 @@ export default function MapContainer() {
       if (!tool) return;
 
       if (tool === "point") {
-        pushPoint(e.latlng);
+        pushPointRef.current?.(e.latlng);
         return;
       }
 
@@ -320,18 +356,18 @@ export default function MapContainer() {
         const first = pts[0];
         const dist = map.distance(first, e.latlng);
         if (dist < 10) {
-          finishDrawing();
+          finishDrawingRef.current?.();
           return;
         }
       }
 
-      pushPoint(e.latlng);
+      pushPointRef.current?.(e.latlng);
     };
 
     const handleDblClick = () => {
       const tool = activeToolRef.current;
       if (tool === "line" || tool === "polygon") {
-        finishDrawing();
+        finishDrawingRef.current?.();
       }
     };
 
@@ -349,7 +385,7 @@ export default function MapContainer() {
         const tool = activeToolRef.current;
         if (tool === "line" || tool === "polygon" || tool === "point") {
           event.preventDefault();
-          finishDrawing();
+          finishDrawingRef.current?.();
         }
       }
     };
@@ -369,14 +405,14 @@ export default function MapContainer() {
      Tegnehjelpere
   -------------------------------------------------------- */
 
-  const pushPoint = (latlng) => {
+  function pushPoint(latlng) {
     drawingPointsRef.current = [...drawingPointsRef.current, latlng];
     setDrawingPoints(drawingPointsRef.current);
     setDrawStatus("");
     drawSketch();
-  };
+  }
 
-  const clearSketch = () => {
+  function clearSketch() {
     const map = mapRef.current;
     if (!map) return;
 
@@ -389,9 +425,9 @@ export default function MapContainer() {
       verticesLayerRef.current.remove();
       verticesLayerRef.current = null;
     }
-  };
+  }
 
-  const drawSketch = () => {
+  function drawSketch() {
     const map = mapRef.current;
     if (!map) return;
 
@@ -419,7 +455,6 @@ export default function MapContainer() {
       }).addTo(verticesLayerRef.current)
     );
 
-    // ✅ Punkt-verktøy: IKKE tegn linje/polygon mellom punktene   
     if (tool === "point") {
       if (sketchLayerRef.current) {
         sketchLayerRef.current.remove();
@@ -449,9 +484,9 @@ export default function MapContainer() {
           : L.polyline(points, baseStyle);
       sketchLayerRef.current.addTo(map);
     }
-  };
+  }
 
-  const finishDrawing = () => {
+  function finishDrawing() {
     const tool = activeToolRef.current;
     if (!tool) return;
 
@@ -475,7 +510,7 @@ export default function MapContainer() {
     }
 
     createLayerFromPoints(points, tool);
-  };
+  }
 
   const buildUniqueName = (base) => {
     let candidate = base;
@@ -557,7 +592,7 @@ export default function MapContainer() {
         className={`leaflet-map-root ${activeTool ? "drawing-cursor" : ""}`}
       />
 
-      {/* 🆕 Edit-slett HUD (app-stil) */}
+      {/* Edit-slett HUD (app-stil) */}
       {editableLayerId && !activeTool && (
         <div className="draw-hud" onClick={(e) => e.stopPropagation()}>
           <div className="draw-hud-header">

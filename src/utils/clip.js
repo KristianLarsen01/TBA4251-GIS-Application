@@ -1,10 +1,28 @@
-// src/utils/clip.js
+/*
+  Hensikt:
+  Denne fila gjør GIS-operasjonen “Clip”: jeg klipper et kildelag (punkter/linjer/polygon)
+  mot en polygon-maske (f.eks. Analysepolygon).
+
+  Eksterne biblioteker (hvorfor og hvordan):
+  - Turf.js: Brukes til geometri-operasjoner (union, lineIntersect, distance, polygonToLine).
+  - @turf/intersect: brukes for polygon-klipping.
+  - @turf/boolean-point-in-polygon: brukes for å sjekke om punkter (og midtpunkter av linjesegment)
+    ligger innenfor masken.
+
+  Min kode vs bibliotek:
+  - Turf gjør selve geometri-matematikken.
+  - Jeg har skrevet logikken for å håndtere ulike geometri-typer (punkt/linje/polygon),
+    lage én robust maske (dissolveMask), og gi forståelige feilmeldinger.
+*/
+
 import * as turf from "@turf/turf";
 import intersect from "@turf/intersect";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import { featureCollection, lineString, point } from "@turf/helpers";
 
 /* ----------------------- Felles hjelpefunksjoner ----------------------- */
+
+// Jeg normaliserer GeoJSON til FeatureCollection så resten av koden blir enklere.
 
 function toFeatureCollection(geojson) {
   if (!geojson || typeof geojson !== "object") {
@@ -73,6 +91,8 @@ function getMaskPolygons(maskFC) {
  * Union av alle maskepolygoner → ÉN maske (Polygon eller MultiPolygon)
  */
 function dissolveMask(polys) {
+  // Bibliotek: turf.union
+  // Jeg har fallback hvis union feiler på én enkelt geometri.
   if (!polys.length) return null;
   if (polys.length === 1) return polys[0];
 
@@ -96,6 +116,8 @@ function dissolveMask(polys) {
  * Robust intersect-wrapper
  */
 function turfIntersect(a, b) {
+  // Bibliotek: intersect
+  // Jeg har et fallback-kall for Turf-varianter.
   try {
     return intersect(a, b);
   } catch (e) {
@@ -252,6 +274,7 @@ function clipLines(sourceFC, maskFC) {
 /* ----------------------- Hovedfunksjon ----------------------- */
 
 export function clipGeoJson(sourceLayer, maskLayer) {
+  // Jeg velger klippemetode basert på geometri-type i kildelaget.
   const sourceFC = toFeatureCollection(sourceLayer);
   const maskFC = toFeatureCollection(maskLayer);
 

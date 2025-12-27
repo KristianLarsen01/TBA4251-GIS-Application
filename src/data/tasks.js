@@ -1,3 +1,17 @@
+/*
+  Hensikt:
+  Denne fila er “manuset” til oppgavepanelet. Hver oppgave har tittel, mål og innhold
+  (tekst, lenker og noen bilder) som guider brukeren gjennom GIS-analysen.
+
+  Eksterne biblioteker / plattform (hvorfor og hvordan):
+  - Vite (byggeverktøyet): Jeg bruker import.meta.env.BASE_URL for å lage riktig sti
+    til bilder i public-mappa, uansett om appen kjører lokalt eller fra GitHub Pages.
+
+  Min kode vs bibliotek:
+  - Selve oppgavene/teksten og datastrukturen her er skrevet av meg.
+  - import.meta.env.* er en Vite-funksjon (ikke vanlig “vanilla JS”).
+*/
+
 const tasks = [
   {
     id: 1,

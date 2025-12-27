@@ -1,4 +1,16 @@
-import { useLayers } from "../../context/LayersContext.jsx";
+/*
+  Hensikt:
+  Denne fila lager verktøylinja til venstre. Her kan brukeren laste opp data,
+  tegne punkt/linje/polygon, og åpne analyseverktøy (buffer/clip/difference osv.).
+
+  Eksterne ting (hvorfor og hvordan):
+  - useDrawing: jeg henter “hvilket tegneverktøy er aktivt” fra felles tilstand.
+
+  Min kode vs bibliotek:
+  - All klikk-logikk og knappeliste er skrevet av meg.
+  - Hook-mekanismen (useState/useContext under panseret) er rammeverk.
+*/
+
 import { useDrawing } from "../../context/DrawingContext.jsx";
 
 export default function ToolRail({
@@ -9,11 +21,10 @@ export default function ToolRail({
   tourActive,
   highlight,
 }) {
-  const { layers } = useLayers();
-  const hasLayers = layers.length > 0;
   const { activeTool, toggleTool, stopDrawing } = useDrawing();
 
   const handleClick = (id) => {
+    // Når touren kjører, vil jeg ikke at brukeren skal “rote seg bort”.
     if (tourActive) return;
 
     // Tegneverktøy håndteres her, ikke via onToolClick
@@ -32,6 +43,7 @@ export default function ToolRail({
 
     // Buffer og andre analyseverktøy – disabled med feilmelding
     if (id === "buffer" || id === "intersect" || id === "union" || id === "difference" || id === "clip" || id === "areaFilter" || id === "featureExtractor" || id === "dissolve") {
+      // Jeg slår alltid av tegning før jeg åpner analysepanel.
       stopDrawing();
       onToolClick?.(id);
       return;
@@ -103,6 +115,11 @@ export default function ToolRail({
 
       {/* ANALYSEVERKTØY */}
       <div className="tool-rail-group">
+        {/*
+          Merk:
+          Knappene her åpner bare paneler. Selve GIS-operasjonene skjer i utils/
+          (ofte med Turf) og resultatet legges inn som nye kartlag.
+        */}
         <button
           className="tool-rail-button"
           onClick={() => handleClick("areaFilter")}

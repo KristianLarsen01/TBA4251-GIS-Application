@@ -1,8 +1,29 @@
-// src/context/LayersContext.jsx
+/*
+  Hensikt:
+  Denne fila er “lag-banken” i appen: her lagrer jeg alle GeoJSON-lag som vises i kartet,
+  og funksjoner for å legge til, endre, flytte, skjule og slette lag.
+
+  Hvorfor dette er en egen context:
+  Når jeg jobber med kart, trenger både kart-komponenten, lagpanelet og verktøy-panelene
+  tilgang til samme lagliste. I stedet for å sende props gjennom mange komponenter,
+  bruker jeg Context i React.
+
+  Eksterne biblioteker (hvorfor og hvordan):
+  - React (rammeverket):
+    - Context: deler data (layers-lista) til mange komponenter samtidig.
+    - createContext/useContext: lager/leser contexten.
+    - useState: lagrer layers-lista og valg i minnet.
+
+  Min kode vs bibliotek:
+  - All logikk rundt layers-lista (addLayer/updateLayer/removeFeature osv.) er skrevet av meg.
+  - Context/hook-mekanismen er bibliotek.
+*/
+
 import { createContext, useContext, useState } from "react";
 
 const LayersContext = createContext(null);
 
+// Jeg bruker en enkel fargepalett så nye lag får fornuftige farger uten at jeg må velge alt manuelt.
 const COLOR_PALETTE = [
   "#1f77b4",
   "#ff7f0e",
@@ -15,7 +36,10 @@ const COLOR_PALETTE = [
   "#17becf",
 ];
 
-// Sørg for stabile feature-id + gjør MultiPoint redigerbart per punkt
+// Jeg sørger for stabile feature-id’er og gjør MultiPoint redigerbart per punkt.
+// Hvorfor: Når jeg skal klikke/velge/slette enkeltobjekter i Leaflet, er det veldig
+// praktisk at hvert objekt har en stabil id. Mange GeoJSON-filer har ikke id,
+// derfor lager jeg en “fallback”.
 function ensureFeatureIds(fc, layerId) {
   if (!fc || fc.type !== "FeatureCollection" || !Array.isArray(fc.features)) return fc;
 
@@ -27,7 +51,7 @@ function ensureFeatureIds(fc, layerId) {
 
     if (!geom) return;
 
-    // 🔥 MultiPoint -> eksploder til Point-features (for sletting av enkeltpunkt)
+    // MultiPoint -> eksploder til Point-features (for sletting av enkeltpunkt)
     if (geom.type === "MultiPoint" && Array.isArray(geom.coordinates)) {
       geom.coordinates.forEach((coord, j) => {
         const props = { ...propsBase };
@@ -65,6 +89,8 @@ export function LayersProvider({ children }) {
   const [layers, setLayers] = useState([]);
   const [editableLayerId, setEditableLayerId] = useState(null);
 
+  // Legg til nytt lag. Jeg setter default-verdier (synlig, farge, fillOpacity),
+  // og jeg sørger for at data har id’er der det mangler.
   const addLayer = (layer) => {
     setLayers((prev) => {
       const idx = prev.length % COLOR_PALETTE.length;
@@ -89,10 +115,12 @@ export function LayersProvider({ children }) {
   };
 
   const updateLayer = (id, patch) => {
+    // “patch” betyr at jeg bare oppdaterer feltene jeg får inn.
     setLayers((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
   };
 
   const toggleVisibility = (id) => {
+    // Klikk “øye” i lagpanelet: synlig <-> skjult.
     setLayers((prev) =>
       prev.map((layer) =>
         layer.id === id
@@ -103,11 +131,13 @@ export function LayersProvider({ children }) {
   };
 
   const removeLayer = (id) => {
+    // Slett hele laget fra lista.
     setLayers((prev) => prev.filter((l) => l.id !== id));
     setEditableLayerId((curr) => (curr === id ? null : curr));
   };
 
   const moveLayer = (id, direction) => {
+    // Flytt lag opp/ned i lista. Rekkefølgen påvirker hva som tegnes “øverst”.
     setLayers((prev) => {
       const idx = prev.findIndex((l) => l.id === id);
       if (idx === -1) return prev.slice();
@@ -122,6 +152,7 @@ export function LayersProvider({ children }) {
   };
 
   const clearLayers = () => {
+    // Rydd alt (brukes f.eks. når man vil starte “på nytt”).
     setLayers([]);
     setEditableLayerId(null);
   };
@@ -147,35 +178,36 @@ export function LayersProvider({ children }) {
       return next;
     });
 
-    // Hvis vi endte opp med å tømme laget i edit-modus: avslutt edit
+    // Hvis jeg endte opp med å tømme laget i edit-modus: avslutt edit
     setEditableLayerId((curr) => (curr === layerId ? null : curr));
   };
 
-  // ✅ Slett mange features. Hvis laget blir tomt -> fjern hele laget.
-const removeFeatures = (layerId, featureIds) => {
-  const ids = new Set(featureIds);
+  // Slett mange features. Hvis laget blir tomt -> fjern hele laget.
+  const removeFeatures = (layerId, featureIds) => {
+    // Jeg bruker dette ved multiselect-sletting (Enter) i kartet.
+    const ids = new Set(featureIds);
 
-  setLayers((prev) => {
-    const next = prev.flatMap((l) => {
-      if (l.id !== layerId) return [l];
+    setLayers((prev) => {
+      const next = prev.flatMap((l) => {
+        if (l.id !== layerId) return [l];
 
-      const fc = ensureFeatureIds(l.data, l.id);
-      const nextFeatures = (fc.features || []).filter((f) => {
-        const fid = f?.properties?.id ?? f?.properties?.__fid;
-        return !ids.has(fid);
+        const fc = ensureFeatureIds(l.data, l.id);
+        const nextFeatures = (fc.features || []).filter((f) => {
+          const fid = f?.properties?.id ?? f?.properties?.__fid;
+          return !ids.has(fid);
+        });
+
+        if (nextFeatures.length === 0) return []; // fjern laget helt
+
+        return [{ ...l, data: { ...fc, features: nextFeatures } }];
       });
 
-      if (nextFeatures.length === 0) return []; // fjern laget helt
-
-      return [{ ...l, data: { ...fc, features: nextFeatures } }];
+      return next;
     });
 
-    return next;
-  });
-
-  // hvis laget i edit ble tømt (eller uansett), nullstill edit på samme lag
-  setEditableLayerId((curr) => (curr === layerId ? null : curr));
-};
+    // Hvis laget i edit ble tømt (eller uansett), nullstill edit på samme lag
+    setEditableLayerId((curr) => (curr === layerId ? null : curr));
+  };
 
 
   const value = {
@@ -197,6 +229,7 @@ const removeFeatures = (layerId, featureIds) => {
 }
 
 export function useLayers() {
+  // Jeg har en liten sikkerhetssjekk her.
   const ctx = useContext(LayersContext);
   if (!ctx) throw new Error("useLayers must be used inside a LayersProvider");
   return ctx;

@@ -1,4 +1,16 @@
-// src/utils/union.js
+/*
+  Hensikt:
+  Denne fila lager Union mellom to polygonlag.
+  Union betyr at jeg slår sammen flater, så jeg får ett (større) område.
+
+  Eksterne biblioteker (hvorfor og hvordan):
+  - Turf.js: turf.union gjør selve geometri-sammenslåingen.
+
+  Min kode vs bibliotek:
+  - Turf gjør geometri-matematikken.
+  - Jeg har skrevet normalisering (FeatureCollection), MultiPolygon-håndtering og feilmeldinger.
+*/
+
 import * as turf from "@turf/turf";
 import { featureCollection } from "@turf/helpers";
 

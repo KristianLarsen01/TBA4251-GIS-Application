@@ -1,4 +1,22 @@
-// src/components/layout/LayersPanel.jsx
+/*
+  Hensikt:
+  Dette er lagpanelet (høyre side). Her kan brukeren:
+  - endre navn på lag
+  - velge farge og gjennomsiktighet
+  - skru lag av/på (synlig/ikke synlig)
+  - flytte lag opp/ned i rekkefølgen
+  - gå inn i redigeringsmodus (for å kunne slette objekter i kartet)
+  - slette lag
+
+  Eksterne ting (hvorfor og hvordan):
+  - useLayers: jeg henter og oppdaterer laglista fra felles tilstand.
+  - useState/useEffect/useMemo/useRef: brukes for lokal UI-tilstand, caching og refs.
+
+  Min kode vs bibliotek:
+  - All lag-UI her (knapper, debounce, demo-lag i tour) er skrevet av meg.
+  - Hook-/context-mekanismen er rammeverk.
+*/
+
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useLayers } from "../../context/LayersContext.jsx";
 
@@ -47,11 +65,15 @@ export default function LayersPanel({
 
   const showTourDemoLayer = tourStep === 4;
 
+  // I touren viser jeg tre fake lag for å demonstrere UI,
+  // uten at det påvirker de ekte lagene i kartet.
   const displayLayers = useMemo(() => {
     if (showTourDemoLayer) return [...TOUR_DEMO_LAYERS, ...(layers || [])];
     return layers || [];
   }, [showTourDemoLayer, layers]);
 
+  // Jeg holder lokale verdier mens man skriver/justerer,
+  // og sender til context litt “forsinket” så UI føles mer responsivt.
   const [localColors, setLocalColors] = useState({});
   const [localOpacity, setLocalOpacity] = useState({});
   const [localNames, setLocalNames] = useState({});
@@ -61,37 +83,9 @@ export default function LayersPanel({
   // Demo “redigering” kun for UI
   const [demoEditableId, setDemoEditableId] = useState(null);
 
-  useEffect(() => {
-    setLocalColors((prev) => {
-      const next = {};
-      displayLayers.forEach((l) => {
-        next[l.id] = prev[l.id] ?? l.color ?? "#3388ff";
-      });
-      return next;
-    });
-
-    setLocalOpacity((prev) => {
-      const next = {};
-      displayLayers.forEach((l) => {
-        const fromLayer =
-          typeof l.fillOpacity === "number" ? l.fillOpacity : 0.7;
-        const prevVal = prev[l.id];
-        next[l.id] = typeof prevVal === "number" ? prevVal : fromLayer;
-      });
-      return next;
-    });
-
-    setLocalNames((prev) => {
-      const next = {};
-      displayLayers.forEach((l) => {
-        next[l.id] = prev[l.id] ?? l.name ?? "";
-      });
-      return next;
-    });
-  }, [displayLayers]);
-
   // Demo: lag 1 starter “låst” i intro
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (showTourDemoLayer) setDemoEditableId("__tour_demo_layer_1__");
     else setDemoEditableId(null);
   }, [showTourDemoLayer]);
@@ -100,6 +94,7 @@ export default function LayersPanel({
     setLocalColors((prev) => ({ ...prev, [layerId]: value }));
     if (isDemo) return;
 
+    // Liten debounce: hvis du drar i fargevelgeren vil jeg ikke spamme updateLayer.
     if (colorTimersRef.current[layerId]) clearTimeout(colorTimersRef.current[layerId]);
     colorTimersRef.current[layerId] = setTimeout(() => {
       updateLayer(layerId, { color: value });
@@ -114,6 +109,7 @@ export default function LayersPanel({
     setLocalOpacity((prev) => ({ ...prev, [layerId]: normalized }));
     if (isDemo) return;
 
+    // Samme idé: debounce på prosent-justering.
     if (opacityTimersRef.current[layerId]) clearTimeout(opacityTimersRef.current[layerId]);
     opacityTimersRef.current[layerId] = setTimeout(() => {
       updateLayer(layerId, { fillOpacity: normalized });
@@ -205,7 +201,7 @@ export default function LayersPanel({
 
               <input
                 className="layers-name-input"
-                value={localNames[layer.id] ?? ""}
+                value={localNames[layer.id] ?? layer.name ?? ""}
                 onChange={(e) =>
                   setLocalNames((prev) => ({ ...prev, [layer.id]: e.target.value }))
                 }
@@ -264,7 +260,7 @@ export default function LayersPanel({
                     }
 
                     const entering = editableLayerId !== layer.id;
-                    if (entering) onEnterEditMode?.(); // ✅ lukk paneler før edit
+                    if (entering) onEnterEditMode?.(); 
 
                     setEditableLayerId(entering ? layer.id : null);
                   }}

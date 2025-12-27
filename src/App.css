@@ -1,3 +1,18 @@
+/*
+  Hensikt:
+  Hoved-stylesheetet for UI-et i FootyGIS (layout, paneler, knapper, tour, m.m.).
+  Dette er ren presentasjon: CSS bestemmer hvordan appen ser ut, men ikke hva den
+  "gjør".
+
+  Eksterne biblioteker:
+  - Ingen direkte. (Noen klasser kan være inspirert av vanlige UI-mønstre, men
+    dette er ikke Tailwind/Bootstrap e.l.)
+
+  Min kode vs bibliotek:
+  - Alt her er skrevet av meg.
+  - Leaflet sin egen CSS ligger ikke her; den importeres i `src/main.jsx`.
+*/
+
 /* =========================================================
    Layout / Shell
    ========================================================= */

@@ -1,4 +1,16 @@
-// src/components/layout/TaskPanel.jsx
+/*
+  Hensikt:
+  Dette er oppgavepanelet til høyre. Det viser én oppgave om gangen, med tekst,
+  lenker og bilder. Brukeren kan bla Forrige/Neste.
+
+  Eksterne ting (hvorfor og hvordan):
+  - Jeg bruker PrimaryButton (min egen UI-komponent) for å holde stil lik overalt.
+
+  Min kode vs bibliotek:
+  - Render-logikken for task.content (string/link/image) er skrevet av meg.
+  - Selve “komponent-motoren” (at UI oppdateres når props endrer seg) er rammeverk.
+*/
+
 import PrimaryButton from "../ui/PrimaryButton.jsx";
 
 export default function TaskPanel({
@@ -43,6 +55,10 @@ export default function TaskPanel({
         )}
 
         <div className="task-panel-body">
+          {/*
+            task.content kan være tekst (string), link-objekt eller bilde-objekt.
+            Jeg renderer forskjellig basert på type, så content kan blandes fritt.
+          */}
           {task.content?.map((item, i) => {
             if (typeof item === "string") return <p key={i}>{item}</p>;
 

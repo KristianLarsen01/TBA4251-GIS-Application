@@ -1,3 +1,19 @@
+/*
+  Hensikt:
+  Dette panelet lar brukeren gjøre Union mellom to polygonlag.
+  Union betyr at jeg slår sammen arealene til ett nytt lag.
+
+  Hvor skjer selve GIS-beregningen?
+  - I utils/union.js (unionGeoJson). Den bruker Turf.
+
+  Eksterne biblioteker:
+  - Turf (indirekte): inne i unionGeoJson.
+
+  Min kode vs bibliotek:
+  - Denne fila er UI + validering + addLayer.
+  - Turf gjør geometri-sammenslåingen.
+*/
+
 import { useState, useEffect } from "react";
 import { useLayers } from "../../context/LayersContext.jsx";
 import { unionGeoJson } from "../../utils/union.js";
@@ -37,6 +53,7 @@ export default function UnionPanel({ onClose }) {
   }, [layers]);
 
   const handleSubmit = (e) => {
+    // Jeg sørger for at jeg har valgt to ulike polygonlag.
     e.preventDefault();
     setStatus("");
 

@@ -1,4 +1,17 @@
-// src/components/onboarding/IntroModal.jsx
+/*
+  Hensikt:
+  Dette er intro-dialogen som vises i starten av touren.
+  Den har to “skjermer” (step 0 og step 1):
+  - velkomst/rammehistorie
+  - kort forklaring av hvordan siden er bygget opp
+
+  Eksterne ting:
+  - Ingen tredjepartsbibliotek her; dette er bare en dialog med tekst.
+
+  Min kode vs bibliotek:
+  - Tekstinnhold og oppsett er skrevet av meg.
+  - Dialog/komponent-visning styres av rammeverket.
+*/
 
 export default function IntroModal({ step, onNext, onSkip }) {
   const isWelcome = step === 0;
@@ -30,7 +43,7 @@ export default function IntroModal({ step, onNext, onSkip }) {
               samtidig som du bruker verktøyene i kartet.
             </p>
             <p>
-              Før vi starter selve analysen tar vi en rask omvisning på
+              Før du starter selve analysen får du en rask omvisning på
               hvordan siden er bygget opp.
             </p>
             <p>

@@ -1,5 +1,20 @@
-// src/components/tools/BufferPanel.jsx
-import { useEffect, useMemo, useState } from "react";
+/*
+  Hensikt:
+  Dette panelet lar brukeren lage en buffer rundt et valgt lag.
+  Resultatet blir et nytt lag i kartet (originalen røres ikke).
+
+  Hvor skjer selve GIS-beregningen?
+  - Jeg kaller createBufferedGeoJson i utils/buffer.js.
+
+  Eksterne biblioteker (hvorfor og hvordan):
+  - Turf (indirekte): createBufferedGeoJson bruker Turf for å beregne buffer.
+
+  Min kode vs bibliotek:
+  - Dette panelet (skjema, validering, addLayer) er skrevet av meg.
+  - Turf-bufferen er bibliotek.
+*/
+
+import { useMemo, useState } from "react";
 import { useLayers } from "../../context/LayersContext.jsx";
 import { createBufferedGeoJson } from "../../utils/buffer.js";
 
@@ -18,22 +33,16 @@ export default function BufferPanel({ onClose }) {
   const [distanceMeters, setDistanceMeters] = useState(100);
   const [status, setStatus] = useState("");
 
-  // ✅ Når panelet åpnes eller layers endrer seg:
-  // - Hvis ingen valgt, velg siste lag
-  // - Hvis valgt lag ikke finnes lenger, velg siste lag
-  useEffect(() => {
-    if (!hasLayers) {
-      if (selectedLayerId) setSelectedLayerId("");
-      return;
-    }
-
-    const stillValid = layers.some((l) => l.id === selectedLayerId);
-    if (!selectedLayerId || !stillValid) {
-      setSelectedLayerId(defaultLayerId);
-    }
-  }, [hasLayers, layers, defaultLayerId, selectedLayerId]);
+  // Jeg viser alltid et gyldig valg i UI, uten å “tvinge” setState i useEffect.
+  const effectiveSelectedLayerId =
+    !hasLayers
+      ? ""
+      : layers.some((l) => l.id === selectedLayerId)
+        ? (selectedLayerId || defaultLayerId)
+        : defaultLayerId;
 
   const handleSubmit = (e) => {
+    // Jeg validerer input og lager et nytt lag.
     e.preventDefault();
     setStatus("");
 
@@ -43,7 +52,7 @@ export default function BufferPanel({ onClose }) {
     }
 
     const distance = Number(distanceMeters);
-    if (!selectedLayerId) {
+    if (!effectiveSelectedLayerId) {
       setStatus("Velg et lag å buffre.");
       return;
     }
@@ -53,7 +62,7 @@ export default function BufferPanel({ onClose }) {
       return;
     }
 
-    const sourceLayer = layers.find((l) => l.id === selectedLayerId);
+    const sourceLayer = layers.find((l) => l.id === effectiveSelectedLayerId);
     if (!sourceLayer) {
       setStatus("Fant ikke valgt lag.");
       return;
@@ -111,7 +120,7 @@ export default function BufferPanel({ onClose }) {
               <label htmlFor="buffer-layer">Lag som skal buffres</label>
               <select
                 id="buffer-layer"
-                value={selectedLayerId}
+                value={effectiveSelectedLayerId}
                 onChange={(e) => setSelectedLayerId(e.target.value)}
               >
                 {layers.map((layer) => (

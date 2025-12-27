@@ -1,5 +1,20 @@
-// src/components/tools/ClipPanel.jsx
-import { useState, useEffect, useMemo } from "react";
+/*
+  Hensikt:
+  Dette panelet lar brukeren klippe ett eller flere lag mot en polygon-maske.
+  Typisk: klipp alt til Analysepolygon.
+
+  Hvor skjer selve GIS-beregningen?
+  - I utils/clip.js (clipGeoJson). Den bruker Turf til å gjøre geometri-operasjoner.
+
+  Eksterne biblioteker:
+  - Turf (indirekte): brukes inne i clipGeoJson.
+
+  Min kode vs bibliotek:
+  - Valg av kilde-lag/maske + oppretting av nye lag er skrevet av meg.
+  - Geometri-klippingen er Turf.
+*/
+
+import { useState, useMemo } from "react";
 import { useLayers } from "../../context/LayersContext.jsx";
 import { clipGeoJson } from "../../utils/clip.js";
 
@@ -31,21 +46,16 @@ export default function ClipPanel({ onClose }) {
     });
   }, [layers]);
 
-  // ✅ Default maske = FØRSTE polygonlag (typisk Analysepolygon)
-  useEffect(() => {
-    if (!polygonLayers.length) {
-      if (maskId) setMaskId("");
-      return;
-    }
-
-    const stillValid = polygonLayers.some((l) => l.id === maskId);
-    if (!maskId || !stillValid) {
-      const firstPolygon = polygonLayers[0];
-      setMaskId(firstPolygon.id);
-    }
-  }, [polygonLayers, maskId]);
+  // Jeg viser alltid en gyldig maske i UI, uten å sette state i useEffect.
+  const effectiveMaskId =
+    polygonLayers.length === 0
+      ? ""
+      : polygonLayers.some((l) => l.id === maskId)
+        ? (maskId || polygonLayers[0].id)
+        : polygonLayers[0].id;
 
   const handleSubmit = (e) => {
+    // Jeg validerer valg og kjører klipp per valgt kildelag.
     e.preventDefault();
     setStatus("");
 
@@ -64,19 +74,19 @@ export default function ClipPanel({ onClose }) {
       return;
     }
 
-    if (!maskId) {
+    if (!effectiveMaskId) {
       setStatus("Velg et maske-lag.");
       return;
     }
 
-    if (sourceIds.includes(maskId)) {
+    if (sourceIds.includes(effectiveMaskId)) {
       setStatus(
         "Maske-laget kan ikke være blant lagene som skal klippes. Fjern det fra listen, eller velg et annet maske-lag."
       );
       return;
     }
 
-    const maskLayer = layers.find((l) => l.id === maskId);
+    const maskLayer = layers.find((l) => l.id === effectiveMaskId);
     if (!maskLayer) {
       setStatus("Fant ikke maske-laget.");
       return;
@@ -202,7 +212,7 @@ export default function ClipPanel({ onClose }) {
                 <>
                   <select
                     id="clip-mask"
-                    value={maskId}
+                    value={effectiveMaskId}
                     onChange={(e) => setMaskId(e.target.value)}
                   >
                     {polygonLayers.map((layer) => (

@@ -1,4 +1,19 @@
-// src/components/tools/IntersectPanel.jsx
+/*
+  Hensikt:
+  Dette panelet lar brukeren gjøre Intersect (A ∩ B):
+  Jeg finner området der to polygonlag overlapper.
+
+  Hvor skjer selve GIS-beregningen?
+  - I utils/intersect.js (intersectGeoJson). Den bruker Turf.
+
+  Eksterne biblioteker:
+  - Turf (indirekte): inne i intersectGeoJson.
+
+  Min kode vs bibliotek:
+  - Denne fila er UI + validering + oppretting av nytt lag, skrevet av meg.
+  - Turf gjør geometri-operasjonen.
+*/
+
 import { useEffect, useState } from "react";
 import { useLayers } from "../../context/LayersContext.jsx";
 import { intersectGeoJson } from "../../utils/intersect.js";
@@ -44,6 +59,7 @@ export default function IntersectPanel({ onClose }) {
   }, [layers]);
 
   const handleSubmit = (e) => {
+    // Jeg sjekker at jeg har to ulike polygonlag og kjører intersect.
     e.preventDefault();
     setStatus("");
 

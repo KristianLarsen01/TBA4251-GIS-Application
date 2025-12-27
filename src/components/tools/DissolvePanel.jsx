@@ -1,3 +1,19 @@
+/*
+  Hensikt:
+  Dette panelet lar brukeren gjøre Dissolve på et polygonlag.
+  Dissolve betyr: slå sammen polygoner og fjerne interne grenser.
+
+  Hvor skjer selve GIS-beregningen?
+  - I utils/dissolve.js (dissolveGeoJson). Den bruker Turf til å slå sammen geometri.
+
+  Eksterne biblioteker:
+  - Turf (indirekte): inne i dissolveGeoJson.
+
+  Min kode vs bibliotek:
+  - Denne fila er UI (velg lag, velg modus, velg property) + addLayer.
+  - Turf gjør geometri-operasjonen.
+*/
+
 import { useEffect, useMemo, useState } from "react";
 import { useLayers } from "../../context/LayersContext.jsx";
 import { dissolveGeoJson } from "../../utils/dissolve.js";
@@ -52,7 +68,7 @@ export default function DissolvePanel({ onClose }) {
     }
   }, [mode, propertyKeys.length]);
 
-  // Sett default propertyKey når vi går til property-modus
+  // Sett default propertyKey når jeg går til property-modus
   useEffect(() => {
     if (mode === "property" && propertyKeys.length && !propertyKey) {
       setPropertyKey(propertyKeys[0]);
@@ -60,6 +76,7 @@ export default function DissolvePanel({ onClose }) {
   }, [mode, propertyKeys, propertyKey]);
 
   const handleSubmit = (e) => {
+    // Jeg validerer input og lager et nytt lag med dissolved geometri.
     e.preventDefault();
     setStatus("");
 
