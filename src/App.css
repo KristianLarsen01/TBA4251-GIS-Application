@@ -1015,6 +1015,38 @@
   color: #555;
 }
 
+/* =========================================
+   TaskPanel: fast høyde + scroll i innhold
+   ========================================= */
+
+.task-panel--fixed {
+  /* Fast “kort”-høyde som passer alle oppgaver */
+  height: min(620px, calc(100vh - 220px));
+  max-height: min(620px, calc(100vh - 220px));
+  display: flex;
+  flex-direction: column;
+}
+
+/* Midtdelen kan scrolle */
+.task-panel--fixed .task-panel-scroll {
+  flex: 1;
+  min-height: 0;            /* VIKTIG: lar overflow fungere i flex */
+  overflow: auto;
+  padding-right: 4px;       /* litt luft ved scrollbar */
+}
+
+/* Footer alltid nederst og aldri flytter seg */
+.task-panel--fixed .task-panel-footer {
+  margin-top: auto;
+  flex: 0 0 auto;
+}
+
+/* Valgfritt: gjør scroll penere uten at layout hopper */
+.task-panel--fixed .task-panel-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+
 /* =========================================================
    Lagpanel
    ========================================================= */
