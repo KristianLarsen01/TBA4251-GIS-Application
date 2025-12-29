@@ -23,7 +23,6 @@ import { createContext, useContext, useState } from "react";
 
 const LayersContext = createContext(null);
 
-// Jeg bruker en enkel fargepalett så nye lag får fornuftige farger uten at jeg må velge alt manuelt.
 const COLOR_PALETTE = [
   "#1f77b4",
   "#ff7f0e",
@@ -36,10 +35,6 @@ const COLOR_PALETTE = [
   "#17becf",
 ];
 
-// Jeg sørger for stabile feature-id’er og gjør MultiPoint redigerbart per punkt.
-// Hvorfor: Når jeg skal klikke/velge/slette enkeltobjekter i Leaflet, er det veldig
-// praktisk at hvert objekt har en stabil id. Mange GeoJSON-filer har ikke id,
-// derfor lager jeg en “fallback”.
 function ensureFeatureIds(fc, layerId) {
   if (!fc || fc.type !== "FeatureCollection" || !Array.isArray(fc.features)) return fc;
 
@@ -51,17 +46,14 @@ function ensureFeatureIds(fc, layerId) {
 
     if (!geom) return;
 
-    // MultiPoint -> eksploder til Point-features (for sletting av enkeltpunkt)
     if (geom.type === "MultiPoint" && Array.isArray(geom.coordinates)) {
       geom.coordinates.forEach((coord, j) => {
         const props = { ...propsBase };
 
-        // Lag helt unik id per punkt
         const fallback = `${layerId}-mp-${idx}-${j}`;
         if (!props.id && !props.__fid) props.__fid = fallback;
         if (!props.id && props.__fid) props.id = props.__fid;
 
-        // Hold gjerne på indeks (kan være nyttig i debug)
         props.__mp_index = j;
 
         out.push({
@@ -73,7 +65,6 @@ function ensureFeatureIds(fc, layerId) {
       return;
     }
 
-    // Vanlig feature: sikre id
     const props = { ...propsBase };
     const fallback = `${layerId}-feat-${idx}`;
     if (!props.id && !props.__fid) props.__fid = fallback;
@@ -89,8 +80,7 @@ export function LayersProvider({ children }) {
   const [layers, setLayers] = useState([]);
   const [editableLayerId, setEditableLayerId] = useState(null);
 
-  // Legg til nytt lag. Jeg setter default-verdier (synlig, farge, fillOpacity),
-  // og jeg sørger for at data har id’er der det mangler.
+  // Legg til nytt lag (NYTT: legges øverst)
   const addLayer = (layer) => {
     setLayers((prev) => {
       const idx = prev.length % COLOR_PALETTE.length;
@@ -101,26 +91,24 @@ export function LayersProvider({ children }) {
       const id = layer.id;
       const data = ensureFeatureIds(layer.data, id);
 
-      return [
-        ...prev,
-        {
-          visible: true,
-          color,
-          fillOpacity,
-          ...layer,
-          data,
-        },
-      ];
+      const newLayer = {
+        visible: true,
+        color,
+        fillOpacity,
+        ...layer,
+        data,
+      };
+
+      // ✅ NYTT: nye lag øverst i lista
+      return [newLayer, ...prev];
     });
   };
 
   const updateLayer = (id, patch) => {
-    // “patch” betyr at jeg bare oppdaterer feltene jeg får inn.
     setLayers((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
   };
 
   const toggleVisibility = (id) => {
-    // Klikk “øye” i lagpanelet: synlig <-> skjult.
     setLayers((prev) =>
       prev.map((layer) =>
         layer.id === id
@@ -131,13 +119,12 @@ export function LayersProvider({ children }) {
   };
 
   const removeLayer = (id) => {
-    // Slett hele laget fra lista.
     setLayers((prev) => prev.filter((l) => l.id !== id));
     setEditableLayerId((curr) => (curr === id ? null : curr));
   };
 
   const moveLayer = (id, direction) => {
-    // Flytt lag opp/ned i lista. Rekkefølgen påvirker hva som tegnes “øverst”.
+    // Toppen av lista (idx=0) er øverst i kartet og øverst i panelet
     setLayers((prev) => {
       const idx = prev.findIndex((l) => l.id === id);
       if (idx === -1) return prev.slice();
@@ -152,12 +139,10 @@ export function LayersProvider({ children }) {
   };
 
   const clearLayers = () => {
-    // Rydd alt (brukes f.eks. når man vil starte “på nytt”).
     setLayers([]);
     setEditableLayerId(null);
   };
 
-  // ✅ Slett én feature. Hvis laget blir tomt -> fjern hele laget.
   const removeFeature = (layerId, featureId) => {
     setLayers((prev) => {
       const next = prev.flatMap((l) => {
@@ -169,7 +154,6 @@ export function LayersProvider({ children }) {
           return fid !== featureId;
         });
 
-        // Hvis ingen features igjen: fjern laget helt
         if (nextFeatures.length === 0) return [];
 
         return [{ ...l, data: { ...fc, features: nextFeatures } }];
@@ -178,13 +162,10 @@ export function LayersProvider({ children }) {
       return next;
     });
 
-    // Hvis jeg endte opp med å tømme laget i edit-modus: avslutt edit
     setEditableLayerId((curr) => (curr === layerId ? null : curr));
   };
 
-  // Slett mange features. Hvis laget blir tomt -> fjern hele laget.
   const removeFeatures = (layerId, featureIds) => {
-    // Jeg bruker dette ved multiselect-sletting (Enter) i kartet.
     const ids = new Set(featureIds);
 
     setLayers((prev) => {
@@ -197,7 +178,7 @@ export function LayersProvider({ children }) {
           return !ids.has(fid);
         });
 
-        if (nextFeatures.length === 0) return []; // fjern laget helt
+        if (nextFeatures.length === 0) return [];
 
         return [{ ...l, data: { ...fc, features: nextFeatures } }];
       });
@@ -205,10 +186,8 @@ export function LayersProvider({ children }) {
       return next;
     });
 
-    // Hvis laget i edit ble tømt (eller uansett), nullstill edit på samme lag
     setEditableLayerId((curr) => (curr === layerId ? null : curr));
   };
-
 
   const value = {
     layers,
@@ -229,7 +208,6 @@ export function LayersProvider({ children }) {
 }
 
 export function useLayers() {
-  // Jeg har en liten sikkerhetssjekk her.
   const ctx = useContext(LayersContext);
   if (!ctx) throw new Error("useLayers must be used inside a LayersProvider");
   return ctx;

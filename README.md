@@ -1,4 +1,3 @@
-\
 # FootyGIS (TBA4251)
 
 FootyGIS er en liten GIS-applikasjon i nettleseren der jeg kan laste inn GeoJSON-lag, tegne egne lag i kartet, og kjøre enkle analyseverktøy (Buffer, Clip, Difference, Intersect, Union, Dissolve, Feature Extractor og Area Filter).

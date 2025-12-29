@@ -6,15 +6,9 @@
   - håndterer tegneverktøy (punkt/linje/polygon) og lager nye lag av det du tegner
   - har en liten meny for å bytte bakgrunnskart (Mapbox tiles)
 
-  Eksterne biblioteker / tjenester (hvorfor og hvordan):
-  - Leaflet (L): Kartmotoren. Jeg bruker L.map, L.tileLayer og L.geoJSON for å
-    vise kart og GeoJSON på en enkel måte.
-  - Mapbox (tiles): Jeg henter bakgrunnskart som fliser via URL med access_token.
-    Dette er ikke “kodebibliotek”, men en kart-tjeneste som Leaflet viser.
-
-  Min kode vs bibliotek:
-  - All logikk for tegning, lagbygging, marker/slett og basemap-meny er skrevet av meg.
-  - Leaflet sin rendering og hendelser (map.on, layerGroup, geoJSON osv.) er bibliotek.
+  Endring (punktstørrelse):
+  - Punkter (circleMarker) skalerer fortsatt med zoom, men mye mer forsiktig.
+  - Avtagende vekst (sqrt-kurve) når du zoomer ut, så de ikke blir enorme.
 */
 
 import { useEffect, useRef, useState } from "react";
@@ -63,21 +57,54 @@ const BASEMAPS = [
   },
   {
     id: "satellite",
-    name: "Satellitt",
+    name: "Mapbox Satellite",
     label: "Satellitt",
     url: `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`,
     maxZoom: 19,
   },
 ];
 
+/* =========================================================
+   Punktstørrelse: mild + avtagende skalering når man zoomer ut
+   ========================================================= */
+
+function pointRadiusForZoom(zoom, { base = 5.6, min = 3.8, max = 7.6 } = {}) {
+  // Ref-zoom (der det føles "normalt"): rundt 12 i din start.
+  const ref = 12;
+  const z = typeof zoom === "number" ? zoom : ref;
+
+  // delta > 0 betyr at vi zoomer UT (lavere zoom-verdi)
+  const delta = Math.max(0, ref - z);
+
+  // Avtagende vekst: sqrt gir langt mindre ballooning enn lineær skalering.
+  const scaled = base + Math.sqrt(delta) * 0.55;
+
+  return Math.max(min, Math.min(max, scaled));
+}
+
+function applyPointRadius(group, zoom) {
+  if (!group) return;
+
+  const baseR = pointRadiusForZoom(zoom);
+
+  group.eachLayer((leafletLayer) => {
+    // geoJsonLayer er en layerGroup, så vi må ned til child-lagene
+    if (leafletLayer && typeof leafletLayer.eachLayer === "function") {
+      leafletLayer.eachLayer((child) => {
+        if (child && typeof child.setRadius === "function") {
+          // Les metadata fra pointToLayer (for å beholde selected/buffer "litt større")
+          const meta = child.__fxMeta || {};
+          const selectedBoost = meta.isSelected ? 2.2 : 0;
+          const bufferBoost = !meta.isSelected && meta.isBuffer ? 0.8 : 0;
+
+          child.setRadius(baseR + selectedBoost + bufferBoost);
+        }
+      });
+    }
+  });
+}
 
 export default function MapContainer() {
-  /*
-    Viktig å vite:
-    Leaflet lager et kart-objekt som lever “utenfor komponenten”.
-    Derfor bruker jeg refs (useRef) for å lagre map-objektet, laggrupper osv.
-    Komponenten kan rendre på nytt, men jeg vil ikke opprette kartet på nytt hver gang.
-  */
   const mapRef = useRef(null);
   const mapElRef = useRef(null);
   const dataLayerGroupRef = useRef(null);
@@ -100,49 +127,48 @@ export default function MapContainer() {
   const { layers, addLayer, editableLayerId, removeFeatures } = useLayers();
   const { activeTool, sessionId, stopDrawing } = useDrawing();
 
-  // Hvilket bakgrunnskart som er valgt + om menyen er åpen.
   const [activeBasemapId, setActiveBasemapId] = useState(BASEMAPS[0].id);
   const [basemapMenuOpen, setBasemapMenuOpen] = useState(false);
 
   const [selectedFeatureIds, setSelectedFeatureIds] = useState([]);
 
-  // Jeg peker alltid refene på siste versjon av funksjonene (for event handlers).
+  // Pek refene på siste versjon av funksjonene (for event handlers).
   pushPointRef.current = pushPoint;
   finishDrawingRef.current = finishDrawing;
 
-  // Når jeg bytter hvilket lag som er “i redigering”: nullstill markering.
   useEffect(() => {
     setSelectedFeatureIds([]);
   }, [editableLayerId]);
 
   // Tastatursnarveier i redigeringsmodus (Enter = slett, Esc = tøm markering).
   useEffect(() => {
-  const shouldHandle =
-    editableLayerId && !activeToolRef.current && !activeTool && selectedFeatureIds.length > 0;
+    const shouldHandle =
+      editableLayerId &&
+      !activeToolRef.current &&
+      !activeTool &&
+      selectedFeatureIds.length > 0;
 
-  if (!shouldHandle) return;
+    if (!shouldHandle) return;
 
-  const onKeyDown = (e) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      setSelectedFeatureIds([]);
-    }
-    if (e.key === "Enter") {
-      e.preventDefault();
-      removeFeatures(editableLayerId, selectedFeatureIds);
-      setSelectedFeatureIds([]);
-    }
-  };
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setSelectedFeatureIds([]);
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        removeFeatures(editableLayerId, selectedFeatureIds);
+        setSelectedFeatureIds([]);
+      }
+    };
 
-  window.addEventListener("keydown", onKeyDown);
-  return () => window.removeEventListener("keydown", onKeyDown);
-}, [editableLayerId, activeTool, selectedFeatureIds, removeFeatures]);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [editableLayerId, activeTool, selectedFeatureIds, removeFeatures]);
 
-    /* -------------------------------------------------------
-      Init kart (Leaflet)
-      Leaflet lager kartobjektet, men jeg bestemmer startposisjon og setter opp
-      egne layerGroups (ett for bakgrunnskart, ett for mine GeoJSON-lag).
-    -------------------------------------------------------- */
+  /* -------------------------------------------------------
+     Init kart (Leaflet)
+  -------------------------------------------------------- */
   useEffect(() => {
     if (mapRef.current || !mapElRef.current) return;
 
@@ -150,6 +176,7 @@ export default function MapContainer() {
       center: [63.4305, 10.3951],
       zoom: 12,
       zoomControl: true,
+      attributionControl: false,
     });
 
     const group = L.layerGroup().addTo(map);
@@ -165,7 +192,7 @@ export default function MapContainer() {
     };
   }, []);
 
-  // Jeg lukker basemap-menyen hvis jeg klikker utenfor den.
+  // Lukk basemap-menyen hvis jeg klikker utenfor den.
   useEffect(() => {
     if (!basemapMenuOpen) return;
 
@@ -182,27 +209,21 @@ export default function MapContainer() {
     };
   }, [basemapMenuOpen]);
 
-
-    /* -------------------------------------------------------
-      Bakgrunnskart (Mapbox tiles)
-      Bibliotek: Leaflet L.tileLayer viser flisene.
-      Tjeneste: URL-ene peker til Mapbox.
-    -------------------------------------------------------- */
+  /* -------------------------------------------------------
+     Bakgrunnskart (Mapbox tiles)
+  -------------------------------------------------------- */
   useEffect(() => {
     if (!mapReady) return;
     const map = mapRef.current;
     if (!map) return;
 
-    const bm =
-      BASEMAPS.find((b) => b.id === activeBasemapId) || BASEMAPS[0];
+    const bm = BASEMAPS.find((b) => b.id === activeBasemapId) || BASEMAPS[0];
 
-    // Fjern forrige bakgrunnskart
     if (baseLayerRef.current) {
       map.removeLayer(baseLayerRef.current);
       baseLayerRef.current = null;
     }
 
-    // Legg til valgt bakgrunnskart
     const base = L.tileLayer(bm.url, {
       maxZoom: bm.maxZoom ?? 19,
       attribution: bm.attribution,
@@ -211,11 +232,9 @@ export default function MapContainer() {
     baseLayerRef.current = base;
   }, [mapReady, activeBasemapId]);
 
-    /* -------------------------------------------------------
-      Tegn alle datalag (GeoJSON) oppå bakgrunnskartet
-      Bibliotek: L.geoJSON gjør GeoJSON om til Leaflet-lag.
-      Jeg styler basert på type (polygon/linje/punkt) og valgt/ikke valgt.
-    -------------------------------------------------------- */
+  /* -------------------------------------------------------
+     Tegn alle datalag (GeoJSON)
+  -------------------------------------------------------- */
   useEffect(() => {
     const map = mapRef.current;
     const group = dataLayerGroupRef.current;
@@ -225,6 +244,8 @@ export default function MapContainer() {
 
     layers
       .filter((l) => l.visible !== false)
+      .slice()
+      .reverse()
       .forEach((layer) => {
         const color = layer.color || "#2563eb";
         const nameLower = (layer.name || "").toLowerCase();
@@ -238,7 +259,8 @@ export default function MapContainer() {
 
             const fid = feature?.properties?.id ?? feature?.properties?.__fid;
             const isSelected = selectedFeatureIds.includes(fid);
-            const isEditable = editableLayerId === layer.id && !activeToolRef.current;
+            const isEditable =
+              editableLayerId === layer.id && !activeToolRef.current;
 
             const defaultFill = isBuffer ? 0.3 : 1.0;
             const fillOpacity =
@@ -278,19 +300,30 @@ export default function MapContainer() {
 
             const fid = feature?.properties?.id ?? feature?.properties?.__fid;
             const isSelected = selectedFeatureIds.includes(fid);
-            const isEditable = editableLayerId === layer.id && !activeToolRef.current;
+            const isEditable =
+              editableLayerId === layer.id && !activeToolRef.current;
 
-            return L.circleMarker(latlng, {
-              radius: isSelected ? 9 : isBuffer ? 7 : 6,
+            const z = mapRef.current?.getZoom?.() ?? 12;
+            const baseR = pointRadiusForZoom(z);
+            const radius = baseR + (isSelected ? 2.2 : isBuffer ? 0.8 : 0);
+
+            const marker = L.circleMarker(latlng, {
+              radius,
               color,
               fillColor: color,
               weight: isSelected ? 3 : isEditable ? 2.2 : 1.5,
               fillOpacity,
             });
+
+            // Lagre metadata slik at zoom-handler kan beholde selected/buffer "litt større"
+            marker.__fxMeta = { isSelected, isBuffer };
+
+            return marker;
           },
 
           onEachFeature: (feature, leafletLayer) => {
-            const isEditable = editableLayerId === layer.id && !activeToolRef.current;
+            const isEditable =
+              editableLayerId === layer.id && !activeToolRef.current;
             if (!isEditable) return;
 
             leafletLayer.on("click", () => {
@@ -298,18 +331,39 @@ export default function MapContainer() {
               if (!fid) return;
 
               setSelectedFeatureIds((prev) =>
-                prev.includes(fid) ? prev.filter((x) => x !== fid) : [...prev, fid]
+                prev.includes(fid)
+                  ? prev.filter((x) => x !== fid)
+                  : [...prev, fid]
               );
             });
           },
-
         });
+
         geoJsonLayer.addTo(group);
       });
-    }, [layers, editableLayerId, selectedFeatureIds, removeFeatures]);
 
+    // Etter (re)render av lag: sørg for at punktene får korrekt radius for gjeldende zoom
+    const currentZoom = mapRef.current?.getZoom?.() ?? 12;
+    applyPointRadius(group, currentZoom);
+  }, [layers, editableLayerId, selectedFeatureIds, removeFeatures]);
 
+  /* -------------------------------------------------------
+     Oppdater punkt-radius når man zoomer
+  -------------------------------------------------------- */
+  useEffect(() => {
+    if (!mapReady) return;
+    const map = mapRef.current;
+    const group = dataLayerGroupRef.current;
+    if (!map || !group) return;
 
+    const update = () => applyPointRadius(group, map.getZoom());
+
+    update();
+    map.on("zoomend", update);
+    return () => {
+      map.off("zoomend", update);
+    };
+  }, [mapReady, layers]);
 
   /* -------------------------------------------------------
      Tegneverktøy – lytte på klikk/tastatur
@@ -551,9 +605,7 @@ export default function MapContainer() {
     const name = buildUniqueName(baseName);
 
     addLayer({
-      id: `draw-${tool}-${Date.now()}-${Math.random()
-        .toString(16)
-        .slice(2)}`,
+      id: `draw-${tool}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
       name,
       data: {
         type: "FeatureCollection",
@@ -597,7 +649,9 @@ export default function MapContainer() {
         <div className="draw-hud" onClick={(e) => e.stopPropagation()}>
           <div className="draw-hud-header">
             <div className="draw-hud-title">
-              <span role="img" aria-hidden>🗑️</span>
+              <span role="img" aria-hidden>
+                🗑️
+              </span>
               <span>{`Valgt: ${selectedFeatureIds.length}`}</span>
             </div>
 
@@ -655,7 +709,6 @@ export default function MapContainer() {
             </div>
 
             <div className="draw-hud-actions">
-              {/* ✓ – fullfør */}
               <button
                 type="button"
                 className="draw-hud-icon-button confirm"
@@ -670,7 +723,6 @@ export default function MapContainer() {
                 ✓
               </button>
 
-              {/* ✕ – avbryt */}
               <button
                 type="button"
                 className="draw-hud-icon-button cancel"
@@ -690,28 +742,22 @@ export default function MapContainer() {
 
           <div className="draw-hud-body">{helperText[activeTool]}</div>
 
-          {drawStatus && (
-            <div className="draw-hud-steps">{drawStatus}</div>
-          )}
+          {drawStatus && <div className="draw-hud-steps">{drawStatus}</div>}
 
-          {!drawStatus &&
-            drawingPoints.length > 0 &&
-            activeTool !== "point" && (
-              <div className="draw-hud-steps">
-                <span>{`Punkter lagt til: ${drawingPoints.length}`}</span>
-                <span>Enter for å lagre laget.</span>
-              </div>
-            )}
+          {!drawStatus && drawingPoints.length > 0 && activeTool !== "point" && (
+            <div className="draw-hud-steps">
+              <span>{`Punkter lagt til: ${drawingPoints.length}`}</span>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Bakgrunnskart-knapp nederst til høyre – knapp flyttes opp når menyen er åpen */}
+      {/* Bakgrunnskart-knapp nederst til høyre */}
       <div
         className={`basemap-switcher ${basemapMenuOpen ? "menu-open" : ""}`}
         ref={basemapSwitcherRef}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* MENYEN – alltid rendret, synlighet styres med CSS/transition */}
         <div className="basemap-menu">
           <div className="basemap-menu-grid">
             {BASEMAPS.map((bm) => (
@@ -747,7 +793,6 @@ export default function MapContainer() {
           </div>
         </div>
 
-        {/* Hovedknappen – alltid nede i hjørnet, skyves opp når .menu-open */}
         <button
           type="button"
           className="basemap-toggle"
@@ -762,4 +807,3 @@ export default function MapContainer() {
     </div>
   );
 }
-

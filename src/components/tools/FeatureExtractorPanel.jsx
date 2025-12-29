@@ -1,18 +1,11 @@
 /*
   Hensikt:
   Dette panelet lar brukeren “plukke ut” features basert på properties.
-  For eksempel: featureType = SportIdrettPlass, eller interesse = høy.
+  Endring:
+  - Når bruker velger property (key), genererer vi en dropdown med unike verdier fra laget.
+  - Bruker kan fortsatt velge "Skriv inn selv …" for fritekst.
 
-  Hvor skjer selve filtreringen?
-  - I utils/featureFilter.js.
-    Det er ren kode skrevet av meg (ingen Turf her), og jeg bruker den i UI som en liten regel-motor.
-
-  Eksterne ting:
-  - Ingen GIS-bibliotek her; dette er bare UI + en liten regelmotor jeg har laget.
-
-  Min kode vs bibliotek:
-  - Skjemaet/regler/knapper og kall til addLayer er skrevet av meg.
-  - useState/useEffect/useMemo og oppdatering av UI er rammeverk.
+  Filtrering skjer fortsatt i utils/featureFilter.js (din regelmotor).
 */
 
 import { useEffect, useMemo, useState } from "react";
@@ -43,12 +36,42 @@ const OP_TOOLTIPS = {
   missing: "Feltet mangler (undefined)",
 };
 
+const VALUE_LIMIT = 250; // maks unike verdier per key i dropdown (for å unngå gigantiske lister)
+const CUSTOM_SENTINEL = "__custom__";
+
+// Lager en stabil ID til regler
+function ruleId() {
+  return `r-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+// Hent unike values for en bestemt key i et FeatureCollection
+function uniqueValuesForKey(fc, key, limit = VALUE_LIMIT) {
+  if (!fc?.features?.length || !key) return [];
+  const set = new Set();
+
+  for (const f of fc.features) {
+    const v = f?.properties?.[key];
+    // "missing" / undefined tar vi ikke med som valg i dropdown
+    if (v === undefined) continue;
+
+    // null blir et faktisk valg (kan være relevant i noen datasett)
+    const normalized = v === null ? "null" : String(v);
+    set.add(normalized);
+
+    if (set.size >= limit) break;
+  }
+
+  // Sorter for litt penere UX (tekstlig)
+  return Array.from(set).sort((a, b) => a.localeCompare(b, "nb"));
+}
+
 function newRule(propertyKeys) {
   return {
-    id: `r-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    id: ruleId(),
     key: propertyKeys?.[0] || "",
     op: "eq",
     value: "",
+    valueMode: "auto", // "auto" (dropdown) | "custom" (input)
   };
 }
 
@@ -69,7 +92,7 @@ export default function FeatureExtractorPanel({ onClose }) {
       return;
     }
     const stillValid = layers.some((l) => l.id === layerId);
-    if (!stillValid) setLayerId(layers[layers.length - 1].id);
+    if (!stillValid) setLayerId(layers[0].id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [layers]);
 
@@ -83,6 +106,18 @@ export default function FeatureExtractorPanel({ onClose }) {
     if (!fc?.features?.length) return [];
     return listPropertyKeys(fc);
   }, [selectedLayer]);
+
+  // Bygg en lookup: key -> [unike verdier]
+  // NB: for store datasett kan dette bli tungt, men VALUE_LIMIT begrenser og holder det brukbart.
+  const valuesByKey = useMemo(() => {
+    const fc = selectedLayer?.data;
+    if (!fc?.features?.length || !propertyKeys.length) return {};
+    const map = {};
+    for (const k of propertyKeys) {
+      map[k] = uniqueValuesForKey(fc, k, VALUE_LIMIT);
+    }
+    return map;
+  }, [selectedLayer, propertyKeys]);
 
   // reset regler ved lagbytte (og legg inn én default regel)
   useEffect(() => {
@@ -123,7 +158,14 @@ export default function FeatureExtractorPanel({ onClose }) {
     }
 
     try {
-      const filtered = filterFeatureCollection(selectedLayer.data, rules, combine);
+      // (Valgfritt men nyttig) Stripp bort value for operators som ikke trenger verdi
+      const normalizedRules = rules.map((r) => {
+        const opMeta = OP_OPTIONS.find((o) => o.value === r.op);
+        const needsValue = opMeta?.needsValue ?? true;
+        return needsValue ? r : { ...r, value: "" };
+      });
+
+      const filtered = filterFeatureCollection(selectedLayer.data, normalizedRules, combine);
 
       const outCount = filtered?.features?.length ?? 0;
       if (outCount === 0) {
@@ -174,7 +216,7 @@ export default function FeatureExtractorPanel({ onClose }) {
       ) : (
         <>
           <p className="tool-panel-description">
-            Bygg regler (property + operator + verdi) og lag et nytt lag med features som matcher.
+            Velg lag → velg property → velg verdi fra liste (eller skriv selv) → lag nytt lag med treff.
           </p>
 
           <form className="tool-panel-form" onSubmit={handleRun}>
@@ -205,11 +247,22 @@ export default function FeatureExtractorPanel({ onClose }) {
                   const opMeta = OP_OPTIONS.find((o) => o.value === r.op);
                   const needsValue = opMeta?.needsValue ?? true;
 
+                  const valueOptions = valuesByKey?.[r.key] || [];
+                  const canShowDropdown = needsValue && valueOptions.length > 0;
+
+                  const showCustomInput =
+                    !needsValue ? false : r.valueMode === "custom" || !canShowDropdown;
+
                   return (
                     <div key={r.id} className="fx-rule-row">
+                      {/* KEY */}
                       <select
                         value={r.key}
-                        onChange={(e) => updateRule(r.id, { key: e.target.value })}
+                        onChange={(e) => {
+                          const nextKey = e.target.value;
+                          // Når key endres: reset value + tilbake til dropdown-modus
+                          updateRule(r.id, { key: nextKey, value: "", valueMode: "auto" });
+                        }}
                         disabled={!propertyKeys.length}
                         title="Velg hvilken property (felt/kolonne) du vil filtrere på."
                       >
@@ -220,9 +273,21 @@ export default function FeatureExtractorPanel({ onClose }) {
                         ))}
                       </select>
 
+                      {/* OP */}
                       <select
                         value={r.op}
-                        onChange={(e) => updateRule(r.id, { op: e.target.value })}
+                        onChange={(e) => {
+                          const nextOp = e.target.value;
+                          const meta = OP_OPTIONS.find((o) => o.value === nextOp);
+                          const nextNeedsValue = meta?.needsValue ?? true;
+
+                          // Hvis operator ikke trenger verdi: null ut verdi + sett auto
+                          updateRule(r.id, {
+                            op: nextOp,
+                            value: nextNeedsValue ? r.value : "",
+                            valueMode: nextNeedsValue ? r.valueMode : "auto",
+                          });
+                        }}
                         title={OP_TOOLTIPS[r.op] || ""}
                       >
                         {OP_OPTIONS.map((o) => (
@@ -232,19 +297,48 @@ export default function FeatureExtractorPanel({ onClose }) {
                         ))}
                       </select>
 
-                      <input
-                        type="text"
-                        placeholder="Verdi"
-                        value={r.value}
-                        onChange={(e) => updateRule(r.id, { value: e.target.value })}
-                        disabled={!needsValue}
-                        className={!needsValue ? "fx-value-disabled" : ""}
-                        title={
-                          needsValue
-                            ? "Skriv inn verdien som skal sammenlignes (tekst eller tall)."
-                            : "Denne operatoren trenger ingen verdi."
-                        }
-                      />
+                      {/* VALUE */}
+                      {showCustomInput ? (
+                        <input
+                          type="text"
+                          placeholder="Verdi"
+                          value={r.value}
+                          onChange={(e) => updateRule(r.id, { value: e.target.value })}
+                          disabled={!needsValue}
+                          className={!needsValue ? "fx-value-disabled" : ""}
+                          title={
+                            needsValue
+                              ? "Skriv inn verdien som skal sammenlignes (tekst eller tall)."
+                              : "Denne operatoren trenger ingen verdi."
+                          }
+                        />
+                      ) : (
+                        <select
+                          value={r.value === "" ? "" : r.value}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            if (v === CUSTOM_SENTINEL) {
+                              updateRule(r.id, { valueMode: "custom", value: "" });
+                            } else {
+                              updateRule(r.id, { valueMode: "auto", value: v });
+                            }
+                          }}
+                          disabled={!needsValue}
+                          title={
+                            needsValue
+                              ? "Velg en verdi fra laget. Velg “Skriv inn selv …” for fritekst."
+                              : "Denne operatoren trenger ingen verdi."
+                          }
+                        >
+                          <option value="">Velg verdi…</option>
+                          {valueOptions.map((v) => (
+                            <option key={v} value={v}>
+                              {v}
+                            </option>
+                          ))}
+                          <option value={CUSTOM_SENTINEL}>Skriv inn selv …</option>
+                        </select>
+                      )}
 
                       <button
                         type="button"
@@ -289,6 +383,10 @@ export default function FeatureExtractorPanel({ onClose }) {
                   </button>
                 </div>
               </div>
+
+              <p className="tool-panel-hint">
+                Tips: Hvis lista er lang, kan du velge “Skriv inn selv …” og lime inn verdien.
+              </p>
             </div>
 
             <button type="submit" className="tool-panel-submit" title="Kjør filtreringen og lag nytt lag.">

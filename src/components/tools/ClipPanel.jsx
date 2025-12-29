@@ -32,7 +32,6 @@ export default function ClipPanel({ onClose }) {
     );
   };
 
-  // ✅ Finn alle polygonlag (avledet)
   const polygonLayers = useMemo(() => {
     return (layers || []).filter((layer) => {
       const data = layer?.data;
@@ -51,8 +50,8 @@ export default function ClipPanel({ onClose }) {
     polygonLayers.length === 0
       ? ""
       : polygonLayers.some((l) => l.id === maskId)
-        ? (maskId || polygonLayers[0].id)
-        : polygonLayers[0].id;
+        ? (maskId || polygonLayers[polygonLayers.length - 1].id)
+        : polygonLayers[polygonLayers.length - 1].id;
 
   const handleSubmit = (e) => {
     // Jeg validerer valg og kjører klipp per valgt kildelag.

@@ -41,7 +41,7 @@ export default function DissolvePanel({ onClose }) {
       return;
     }
     const stillValid = polygonLayers.some((l) => l.id === layerId);
-    if (!stillValid) setLayerId(polygonLayers[polygonLayers.length - 1].id);
+    if (!stillValid) setLayerId(polygonLayers[0].id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [layers]);
 
@@ -174,7 +174,7 @@ export default function DissolvePanel({ onClose }) {
                   aria-pressed={mode === "all"}
                   onClick={() => setMode("all")}
                 >
-                  Dissolve alt
+                  Dissolve all
                 </button>
 
                 <button

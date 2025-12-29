@@ -50,11 +50,11 @@ export default function DifferencePanel({ onClose }) {
 
     if (keepValid && subValid && keepId !== subtractId) return;
 
-    const last = polygonLayers[polygonLayers.length - 1];
-    const prev = polygonLayers[polygonLayers.length - 2];
+    const top = polygonLayers[0];
+    const next = polygonLayers[1];
 
-    setKeepId(last.id);       // “beholde”
-    setSubtractId(prev.id);   // “trekke fra”
+    setKeepId(top.id);       // “beholde”
+    setSubtractId(next.id);   // “trekke fra”
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [layers]);
 

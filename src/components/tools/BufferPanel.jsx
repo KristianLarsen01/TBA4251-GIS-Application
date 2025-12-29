@@ -26,7 +26,7 @@ export default function BufferPanel({ onClose }) {
   // ✅ Default: foreslå siste (nyeste) lag
   const defaultLayerId = useMemo(() => {
     if (!hasLayers) return "";
-    return layers[layers.length - 1]?.id ?? "";
+    return layers[0]?.id ?? "";
   }, [hasLayers, layers]);
 
   const [selectedLayerId, setSelectedLayerId] = useState("");

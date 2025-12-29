@@ -45,10 +45,10 @@ export default function UnionPanel({ onClose }) {
     const bStill = polygonLayers.some((l) => l.id === layerBId);
     if (aStill && bStill) return;
 
-    const last = polygonLayers[polygonLayers.length - 1];
-    const prev = polygonLayers[polygonLayers.length - 2];
-    setLayerAId(prev.id);
-    setLayerBId(last.id);
+    const last = polygonLayers[0];
+    const prev = polygonLayers[1];
+    setLayerAId(last.id);
+    setLayerBId(prev.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [layers]);
 

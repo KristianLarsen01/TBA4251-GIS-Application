@@ -50,11 +50,11 @@ export default function IntersectPanel({ onClose }) {
 
     if (aValid && bValid && aId !== bId) return;
 
-    const last = polygonLayers[polygonLayers.length - 1];
-    const prev = polygonLayers[polygonLayers.length - 2];
+    const top = polygonLayers[0];
+    const next = polygonLayers[1];
 
-    setAId(last.id);
-    setBId(prev.id);
+    setAId(top.id);
+    setBId(next.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [layers]);
 
