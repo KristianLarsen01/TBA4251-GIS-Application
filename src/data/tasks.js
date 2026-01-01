@@ -49,7 +49,7 @@ const tasks = [
         src: `${import.meta.env.BASE_URL}task_images/analysepolygon.png`,
         alt: "Eksempel på analysepolygon rundt Trondheim",
       },
-      "Gi laget navnet «Analysepolygon» og en passende farge i lagpanelet. Det kan være lurt å flytte laget til toppen av laglisten med pilene.",
+      "Gi laget navnet «Analysepolygon» og en passende farge i lagpanelet. Det kan være lurt å flytte laget til bunnen av laglisten med pilene (Bakerst i kartvisningen).",
       "Dette laget skal brukes som maske for å klippe alle andre lag til kun å vise data innenfor analyseområdet.",
     ],
   },
@@ -87,7 +87,7 @@ const tasks = [
       "Ideelt sett er fotballbanen innen 300 meter gange, men opptil 1200 meter regnes som ok.",
       "Bruk Buffer-verktøyet på laget «Fotballbaner» to ganger: først med radius 300 meter, deretter 1200 meter.",
       "Bruk så Dissolve-verktøyet på begge bufferlagene for å slå sammen polygonene i lagene (bruk «Dissolve all»).",
-      "Kall de nye lagene «300m_bane» og «1200m_bane», og slett de opprinnelige buffer- og dissolve-lagene.",
+      "Kall de nye lagene «300m_bane» og «1200m_bane», og slett de opprinnelige bufferlagene.",
     ],
   },
   {
@@ -99,8 +99,7 @@ const tasks = [
       "Laget «1200m_bane» representerer områder med minimum akseptabel (ok) tilgang.",
       "Bruk Clip-verktøyet på begge lagene med Analysepolygon som maske for å fjerne områder utenfor analyseområdet.",
       "Slett de opprinnelige bufferlagene og kall de nye lagene «God_tilgang» og «Ok_tilgang».",
-      "For å lage polygonet med dårlig tilgang bruker du Difference-verktøyet.",
-      "Bruk Analysepolygon som hovedlag og trekk fra «Ok_tilgang». Kall det nye laget «Dårlig_tilgang».",
+      "For å lage polygonet med dårlig tilgang bruker du Difference-verktøyet: Bruk Analysepolygon som laget du vil beholde og trekk fra «Ok_tilgang». Kall det nye laget «Dårlig_tilgang».",
     ],
   },
   {
@@ -111,7 +110,8 @@ const tasks = [
       "Av de 100 leilighetene i laget «Leiligheter_finn» er det 10 som er spesielt interessante.",
       "Bruk igjen verktøyet Feature Extractor i verktøylinja for å hente ut leiligheter der egenskapen «interesse» er lik «høy».",
       "Alternativt kan du bruke punkt-tegneverktøyet til å lage ditt eget punktlag med interessante leiligheter.",
-      "Kall laget «Leiligheter», og sørg for at lagrekkefølgen i laglisten er: Dårlig_tilgang, Ok_tilgang, God_tilgang, Leiligheter.",
+      "Kall laget «Leiligheter», og sørg for at lagrekkefølgen i laglisten fra øverst er: Leiligheter, God_tilgang, Ok_tilgang, Dårlig_tilgang.",
+      "Gi deretter lagene representative farger slik at du lett kan skille dem i kartet.",
     ],
   },
   {
