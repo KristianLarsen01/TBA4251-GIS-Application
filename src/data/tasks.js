@@ -20,11 +20,17 @@ const tasks = [
     content: [
       {
         type: "link",
-        text: "data",
+        text: "automatisk nedlastning",
         url: "https://github.com/KristianLarsen01/TBA4251-GIS-Application/raw/refs/heads/main/public/data/data.zip",
-        prefix: "Trykk på følgende lenke og last ned den zippede mappen",
+        prefix: "Trykk på følgende lenke og last ned den zippede mappen med ",
       },
-      "Pakk ut (unzip) mappen på PC-en din og trykk på «Last opp» øverst i verktøylinjen til venstre.",
+      {
+        type: "link",
+        text: "dataen",
+        url: "https://github.com/KristianLarsen01/TBA4251-GIS-Application/blob/main/public/data/data.zip",
+        prefix: "Om den automatiske nedlastningen ikke fungerer, kan du bruke denne lenken og trykke på \"View raw\" for å laste ned ",
+      },
+      "Pakk ut (unzip) mappen på PC-en din og trykk på «Last opp» øverst i verktøylinjen til venstre på denne siden.",
       "Velg filene i den utpakkede data-mappen:",
       "• Leiligheter_finn.geojson",
       "• Arealbruk.geojson",
