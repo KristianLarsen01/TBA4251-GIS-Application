@@ -21,7 +21,7 @@ const tasks = [
       {
         type: "link",
         text: "data",
-        url: "https://github.com/KristianLarsen01/TBA4251-GIS-Application/tree/main/public/data",
+        url: "https://github.com/KristianLarsen01/TBA4251-GIS-Application/raw/refs/heads/main/public/data/data.zip",
         prefix: "Trykk på følgende lenke og last ned den zippede mappen",
       },
       "Pakk ut (unzip) mappen på PC-en din og trykk på «Last opp» øverst i verktøylinjen til venstre.",
