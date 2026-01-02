@@ -98,7 +98,7 @@ const tasks = [
       "Laget «300m_bane» viser områder med god tilgang til fotballbaner.",
       "Laget «1200m_bane» representerer områder med minimum akseptabel (ok) tilgang.",
       "Bruk Clip-verktøyet på begge lagene med Analysepolygon som maske for å fjerne områder utenfor analyseområdet.",
-      "Slett de opprinnelige bufferlagene og kall de nye lagene «God_tilgang» og «Ok_tilgang».",
+      "Slett de opprinnelige dissolvelagene og kall de nye lagene «God_tilgang» og «Ok_tilgang».",
       "For å lage polygonet med dårlig tilgang bruker du Difference-verktøyet: Bruk Analysepolygon som laget du vil beholde og trekk fra «Ok_tilgang». Kall det nye laget «Dårlig_tilgang».",
     ],
   },
