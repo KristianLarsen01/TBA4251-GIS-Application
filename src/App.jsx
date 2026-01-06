@@ -300,7 +300,7 @@ export default function App() {
         <div className="modal-backdrop mobile-warning-backdrop">
           <div className="modal mobile-warning-modal">
             <div className="modal-header">
-              <h2>FotballGIS er laget for PC</h2>
+              <h2>FootyGIS er laget for PC</h2>
               <button
                 className="modal-close"
                 onClick={() => setShowMobileWarning(false)}
